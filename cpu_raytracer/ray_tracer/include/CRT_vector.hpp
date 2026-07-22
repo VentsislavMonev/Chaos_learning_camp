@@ -133,6 +133,6 @@ inline CRT_vector& CRT_vector::normalize() noexcept
 
 inline std::ostream& operator<<(std::ostream& os, const CRT_vector& v)
 {
-    os << v.x << ' ' << v.y << ' ' << v.z;
+    os << '(' << v.x << ", " << v.y << ", " << v.z << ')';
     return os;
 }
