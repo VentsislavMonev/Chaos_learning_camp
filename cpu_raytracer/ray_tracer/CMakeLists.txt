@@ -13,9 +13,6 @@ file(GLOB SOURCES "src/*.cpp")
 
 add_executable(raytracer ${SOURCES})
 
-add_executable(homework homeworks/homework4.cpp)
-target_include_directories(homework PRIVATE include)
-
 # So #include "vec3.hpp" works without relative paths
 target_include_directories(raytracer PRIVATE include)
 
