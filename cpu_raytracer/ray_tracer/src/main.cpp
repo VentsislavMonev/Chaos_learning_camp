@@ -170,30 +170,18 @@ int main()
 
 
     size_t triangles_count = triangles.size();
-    
+    float y = 0.0;
+    float x = 0.0;
     for (int i = 0; i < image_height; i++)
-    {
-        float y = i + 0.5;
-        y/=image_height;
-        y = 1.0-2.0*y;
+    {   
+        y = calculate_y(i,image_height);
 
         for (int j = 0; j < image_width; j++)
         {
-            float x = j + 0.5;
+            x = calculate_x(j,image_width,aspect_ratio);
 
-            x/=image_width;
-
-            x = 2.0*x-1.0;
-
-            x*= aspect_ratio;
-
-            CRT_vector direction(x,y,-1.0);
-            CRT_vector origin(0,0,0);
-
-            CRT_ray ray;
-            ray.origin=origin;
-            ray.direction=direction.normalize();
-
+            CRT_ray ray = generate_ray(x,y,-1);
+            
             int r = 255, g = 255, b = 255;
             float closest_t = std::numeric_limits<float>::max();
 
