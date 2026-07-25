@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CRT_RAY_HPP
+#define CRT_RAY_HPP
 #include "CRT_vector.hpp"
 
 struct CRT_ray
@@ -33,3 +34,5 @@ CRT_ray generate_ray(float x, float y, float z)
     res.origin=origin;
     return res;
 }
+
+#endif

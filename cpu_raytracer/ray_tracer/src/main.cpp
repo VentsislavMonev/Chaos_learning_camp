@@ -175,13 +175,11 @@ int main()
     for (int i = 0; i < image_height; i++)
     {   
         y = calculate_y(i,image_height);
-
         for (int j = 0; j < image_width; j++)
         {
             x = calculate_x(j,image_width,aspect_ratio);
-
             CRT_ray ray = generate_ray(x,y,-1);
-            
+
             int r = 255, g = 255, b = 255;
             float closest_t = std::numeric_limits<float>::max();
 

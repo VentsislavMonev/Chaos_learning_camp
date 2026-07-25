@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CRT_TRIANGLE_HPP
+#define CRT_TRIANGLE_HPP
 
 #include "CRT_vector.hpp"
 
@@ -6,7 +7,7 @@ static const int verts_in_triangle = 3;
 
 class CRT_triangle
 {
-public: 
+    public: 
     CRT_triangle() = default;
     CRT_triangle(const CRT_vector& A, const CRT_vector& B, const CRT_vector& C) noexcept : verts {A,B,C}
     {
@@ -37,3 +38,5 @@ public:
     CRT_vector verts[verts_in_triangle];
     CRT_vector normal_vector;
 };
+
+#endif

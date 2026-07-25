@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CRT_VECTOR_HPP
+#define CRT_VECTOR_HPP
 
 #include <math.h>
 class CRT_vector
@@ -138,3 +139,5 @@ inline std::ostream& operator<<(std::ostream& os, const CRT_vector& v)
     os << '(' << v.x << ", " << v.y << ", " << v.z << ')';
     return os;
 }
+
+#endif
