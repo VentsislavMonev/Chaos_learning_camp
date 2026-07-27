@@ -3,8 +3,11 @@
 #include <vector>
 #include <algorithm>
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 #include "CRT_ray.hpp"
 #include "CRT_triangle.hpp"
+#include "CRT_camera.hpp"
 
 /// Output image resolution
 static const int image_width = 1920;
@@ -44,6 +47,7 @@ inline bool intersect(const CRT_triangle& T, const CRT_ray& R, float& out_t)
 
     // distance from ray origin to Intersection point
     float t = RT_distance/R_projection;
+    if(t<=0) return false;
 
     // The point of intersection P
     CRT_vector P = R.origin + t* R.direction;
@@ -66,32 +70,36 @@ inline bool intersect(const CRT_triangle& T, const CRT_ray& R, float& out_t)
 
 int main() 
 {
-    std::ofstream ppm_file_stream("generated_rays_direction.ppm", std::ios::out | std::ios::binary);
-    ppm_file_stream << "P3\n";
-    ppm_file_stream << image_width << " " << image_height << "\n";
-    ppm_file_stream << max_color_component << "\n";
-
-    std::vector<CRT_ray> rays;
-    rays.reserve(image_height*image_width);
-
-    // ---- initial triangle -------------------------------------
-    // 
-    // CRT_triangle tri 
+    // ---- Pyramid -------------------------------------
+    
+    // CRT_vector apex ( 0.5f,  1.0f, -4.3f);
+    // CRT_vector B0   (-0.37f, -1.0f, -2.63f);
+    // CRT_vector B1   ( 1.37f, -1.0f, -3.63f);
+    // CRT_vector B2   ( 0.37f, -1.0f, -5.37f);
+    // CRT_vector B3   (-1.37f, -1.0f, -4.37f);
+ 
+    // std::vector<CRT_triangle> triangles =
     // {
-    //     CRT_vector(-1.75, -1.75, -3),
-    //     CRT_vector(1.75, -1.75, -3),
-    //     CRT_vector(0, 1.75, -3)
+    //     // 4 triangular side faces
+    //     { apex, B2, B3 },
+    //     { apex, B1, B2 },
+    //     { apex, B0, B1 },
+    //     { apex, B3, B0 },
+ 
+    //     // base, split into 2 triangles
+    //     { B0, B2, B1 },
+    //     { B0, B3, B2 }        
     // };
-
-    // ---- different triangle -------------------------------------
-    //
-    // CRT_triangle tri 
+ 
+    // std::vector<CRT_vector> colors =
     // {
-    //     CRT_vector(-1, -1.30, -3),
-    //     CRT_vector(1.75, -1.75, -3),
-    //     CRT_vector(0, 1, -3)
+    //     {255,  0,  0},
+    //     {  0,255,  0},
+    //     {  0,  0,255},
+    //     {255,255,  0},
+    //     {128,128,128},
+    //     {255,255,255}
     // };
-
 
     // ---- star with triangles -------------------------------------
     
@@ -133,75 +141,60 @@ int main()
         {0,128,128},
         {255,0,0},
         {0,255,0},
-        {0,0,255}
+        {0,0,255} 
     };
 
 
-    // ---- Pyramid -------------------------------------
-    
-    // CRT_vector apex ( 0.5f,  1.0f, -4.3f);
-    // CRT_vector B0   (-0.37f, -1.0f, -2.63f);
-    // CRT_vector B1   ( 1.37f, -1.0f, -3.63f);
-    // CRT_vector B2   ( 0.37f, -1.0f, -5.37f);
-    // CRT_vector B3   (-1.37f, -1.0f, -4.37f);
-
-    // std::vector<CRT_triangle> triangles =
-    // {
-    //     // 4 triangular side faces
-    //     { apex, B2, B3 },
-    //     { apex, B1, B2 },
-    //     { apex, B0, B1 },
-    //     { apex, B3, B0 },
-
-    //     // base, split into 2 triangles
-    //     { B0, B2, B1 },
-    //     { B0, B3, B2 }
-    // };
-
-    // std::vector<CRT_vector> colors =
-    // {
-    //     {255,  0,  0},
-    //     {  0,255,  0},
-    //     {  0,  0,255},
-    //     {255,255,  0},
-    //     {128,128,128},
-    //     {128,128,128}
-    // };
 
 
-    size_t triangles_count = triangles.size();
-    float y = 0.0;
-    float x = 0.0;
-    for (int i = 0; i < image_height; i++)
-    {   
-        y = calculate_y(i,image_height);
-        for (int j = 0; j < image_width; j++)
-        {
-            x = calculate_x(j,image_width,aspect_ratio);
-            CRT_ray ray = generate_ray(x,y,-1);
+    for (size_t frame = 0; frame < 72; frame++)
+    {
+        CRT_vector camera_origin(0,0,0);
+        CRT_camera camera(camera_origin, image_width, image_height);
 
-            int r = 255, g = 255, b = 255;
-            float closest_t = std::numeric_limits<float>::max();
+        camera.roll(5*frame);
 
-            for (size_t c = 0; c < triangles_count; c++)
+        std::ostringstream filename;
+        filename << "frame_" << std::setw(3) << std::setfill('0') << frame << ".ppm";
+
+        std::ofstream ppm_file_stream(filename.str(), std::ios::out | std::ios::binary);
+        ppm_file_stream << "P3\n";
+        ppm_file_stream << image_width << " " << image_height << "\n";
+        ppm_file_stream << max_color_component << "\n";
+
+        size_t triangles_count = triangles.size();
+        float y = 0.0;
+        float x = 0.0;
+        
+        for (int i = 0; i < image_height; i++)
+        {   
+            y = camera.calculate_pixel_y(i);
+            for (int j = 0; j < image_width; j++)
             {
-                float t;
-                if (intersect(triangles[c], ray,t))
+                x = camera.calculate_pixel_x(j);
+                CRT_ray ray = camera.generate_ray(x,y,-1.0f);
+
+                int r = 10, g = 10, b = 10;
+                float closest_t = std::numeric_limits<float>::max();
+
+                for (size_t c = 0; c < triangles_count; c++)
                 {
-                    if(t<closest_t) 
+                    float t;
+                    if (intersect(triangles[c], ray,t))
                     {
-                        closest_t = t;
-                        r = colors[c].x;
-                        g = colors[c].y;
-                        b = colors[c].z;
+                        if(t<closest_t) 
+                        {
+                            closest_t = t;
+                            r = colors[c].x;
+                            g = colors[c].y;
+                            b = colors[c].z;
+                        }
                     }
                 }
-            }
 
-            ppm_file_stream << r << " " << g << " " << b << "\t";
-            
-            rays.push_back(ray);
+                ppm_file_stream << r << " " << g << " " << b << "\t";
+            }
+            ppm_file_stream << '\n';
         }
-        ppm_file_stream << '\n';
     }
 }

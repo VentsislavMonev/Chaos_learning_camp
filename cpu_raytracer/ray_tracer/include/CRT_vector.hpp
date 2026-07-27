@@ -1,6 +1,7 @@
 #ifndef CRT_VECTOR_HPP
 #define CRT_VECTOR_HPP
 
+#include <iostream>
 #include <math.h>
 class CRT_vector
 {
