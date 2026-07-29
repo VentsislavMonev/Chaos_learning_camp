@@ -10,7 +10,9 @@
 class CRT_camera
 {
 public:
+    CRT_camera();
     CRT_camera(const CRT_vector& _position, int _image_width, int _image_height);
+    CRT_camera(const CRT_vector& _position, int _image_width, int _image_height, CRT_matrix matrix);
 
 // ray generation
 public:
@@ -32,7 +34,7 @@ public:
         return x;
     }
 
-    CRT_ray generate_ray(float pixel_x, float pixel_y, float pixel_z)
+    CRT_ray generate_ray(float pixel_x, float pixel_y, float pixel_z) const
     {
         CRT_vector direction(pixel_x,pixel_y,pixel_z);
         direction = direction * rotation_matrix;
@@ -69,6 +71,8 @@ public:
     void set_image_width(int _image_width);
     void set_image_height(int _image_height);
 
+    // if you want to create a camera with a given rotation from the start
+    void set_rotation_matrix(const CRT_matrix& matrix);
     
 private:
     void initialize_image_width(int _image_width);

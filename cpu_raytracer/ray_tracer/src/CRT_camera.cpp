@@ -31,13 +31,37 @@ void CRT_camera::set_image_height(int _image_height)
     aspect_ratio = static_cast<float>(image_width)/static_cast<float>(image_height);
 }
 
+void CRT_camera::set_rotation_matrix(const CRT_matrix &matrix)
+{
+    rotation_matrix=matrix;
+}
+
+CRT_camera::CRT_camera()
+{
+    position = CRT_vector();
+    rotation_matrix = CRT_matrix();
+    image_width=1;
+    image_height=1;
+    aspect_ratio=1;
+}
+
 CRT_camera::CRT_camera(const CRT_vector &_position, int _image_width, int _image_height)
 {
     set_position(_position);
-    set_image_width(_image_width);
-    set_image_height(_image_height);
+    initialize_image_width(_image_width);
+    initialize_image_height(_image_height);
     aspect_ratio = static_cast<float>(image_width)/static_cast<float>(image_height);
 }
+
+CRT_camera::CRT_camera(const CRT_vector &_position, int _image_width, int _image_height, CRT_matrix matrix)
+{
+    set_position(_position);
+    initialize_image_width(_image_width);
+    initialize_image_height(_image_height);
+    set_rotation_matrix(matrix);
+    aspect_ratio = static_cast<float>(image_width)/static_cast<float>(image_height);
+}
+
 
 void CRT_camera::truck(float distance)
 {

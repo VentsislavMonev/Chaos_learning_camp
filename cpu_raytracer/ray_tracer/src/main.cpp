@@ -8,6 +8,7 @@
 #include "CRT_ray.hpp"
 #include "CRT_triangle.hpp"
 #include "CRT_camera.hpp"
+#include "CRT_scene.hpp"
 
 /// Output image resolution
 static const int image_width = 1920;
@@ -57,9 +58,9 @@ inline bool intersect(const CRT_triangle& T, const CRT_ray& R, float& out_t)
     CRT_vector V2_P = P-T.V2();
 
     // if P inside the triangle
-    if( T.normal_vector*(T.E0()^V0_P)>0 &&
-        T.normal_vector*(T.E1()^V1_P)>0 &&
-        T.normal_vector*(T.E2()^V2_P)>0)
+    if( T.normal_vector*(T.E0()^V0_P)>=0.0f &&
+        T.normal_vector*(T.E1()^V1_P)>=0.0f &&
+        T.normal_vector*(T.E2()^V2_P)>=0.0f)
     {
         out_t=t;
         return true;
@@ -70,131 +71,95 @@ inline bool intersect(const CRT_triangle& T, const CRT_ray& R, float& out_t)
 
 int main() 
 {
-    // ---- Pyramid -------------------------------------
+    CRT_scene scene("../scene4.crtscene");
+
+    const CRT_settings& settings            = scene.get_settings();
+    const CRT_camera& camera                = scene.get_camera();
+    const std::vector<CRT_mesh>& objects    = scene.get_objects();
+
+    int image_width  = settings.image_width;
+    int image_height = settings.image_height;
+
+    CRT_vector background = settings.background_color;
+
+    std::ofstream ppm_file_stream("output.ppm");
+    ppm_file_stream << "P3\n" << image_width << " " << image_height << "\n255\n";
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<int> dist(0, 255);    
+
+    int max_numb_triangles_in_meshes = 1;
+
+    for (const CRT_mesh& mesh : objects)
+    {
+        if(mesh.get_triangle_count()>max_numb_triangles_in_meshes)
+            max_numb_triangles_in_meshes = mesh.get_triangle_count();
+    }
     
-    // CRT_vector apex ( 0.5f,  1.0f, -4.3f);
-    // CRT_vector B0   (-0.37f, -1.0f, -2.63f);
-    // CRT_vector B1   ( 1.37f, -1.0f, -3.63f);
-    // CRT_vector B2   ( 0.37f, -1.0f, -5.37f);
-    // CRT_vector B3   (-1.37f, -1.0f, -4.37f);
- 
-    // std::vector<CRT_triangle> triangles =
-    // {
-    //     // 4 triangular side faces
-    //     { apex, B2, B3 },
-    //     { apex, B1, B2 },
-    //     { apex, B0, B1 },
-    //     { apex, B3, B0 },
- 
-    //     // base, split into 2 triangles
-    //     { B0, B2, B1 },
-    //     { B0, B3, B2 }        
-    // };
- 
-    // std::vector<CRT_vector> colors =
-    // {
-    //     {255,  0,  0},
-    //     {  0,255,  0},
-    //     {  0,  0,255},
-    //     {255,255,  0},
-    //     {128,128,128},
-    //     {255,255,255}
-    // };
+    std::vector<CRT_vector> colors;
+    colors.reserve(max_numb_triangles_in_meshes);
 
-    // ---- star with triangles -------------------------------------
+    for (size_t i = 0; i < max_numb_triangles_in_meshes; i++)
+    {
+        int random_number1 = dist(gen);
+        int random_number2 = dist(gen);
+        int random_number3 = dist(gen);
+        colors.push_back(CRT_vector(random_number1,random_number2,random_number3));
+    }
     
-    CRT_vector center(0.0f, 0.0f, -3.0f);
 
-    CRT_vector V0(0.0000f,  1.7500f, -3);
-    CRT_vector V1(0.3927f,  0.5403f, -3);
-    CRT_vector V2(1.6644f,  0.5407f, -3);
-    CRT_vector V3(0.6353f, -0.2065f, -3);
-    CRT_vector V4(1.0287f, -1.4158f, -3);
-    CRT_vector V5(0.0000f, -0.6683f, -3);
-    CRT_vector V6(-1.0287f,-1.4158f, -3);
-    CRT_vector V7(-0.6353f,-0.2065f, -3);
-    CRT_vector V8(-1.6644f, 0.5407f, -3);
-    CRT_vector V9(-0.3927f, 0.5403f, -3);
-
-    std::vector<CRT_triangle> triangles =
+    for (int i = 0; i < image_height; i++)
     {
-        { center, V1, V0 },
-        { center, V2, V1 },
-        { center, V3, V2 },
-        { center, V4, V3 },
-        { center, V5, V4 },
-        { center, V6, V5 },
-        { center, V7, V6 },
-        { center, V8, V7 },
-        { center, V9, V8 },
-        { center, V0, V9 }
-    };
+        float y = camera.calculate_pixel_y(i);
+        for (int j = 0; j < image_width; j++)
+        {
+            float x = camera.calculate_pixel_x(j);
+            CRT_ray ray = camera.generate_ray(x, y, -1.0f);
 
-    std::vector<CRT_vector> colors = 
-    {
-        {0,0,0},
-        {128,0,0},
-        {0,128,0},
-        {128,128,0},
-        {0,0,128},
-        {128,0,128},
-        {0,128,128},
-        {255,0,0},
-        {0,255,0},
-        {0,0,255} 
-    };
-
-
-
-
-    for (size_t frame = 0; frame < 72; frame++)
-    {
-        CRT_vector camera_origin(0,0,0);
-        CRT_camera camera(camera_origin, image_width, image_height);
-
-        camera.roll(5*frame);
-
-        std::ostringstream filename;
-        filename << "frame_" << std::setw(3) << std::setfill('0') << frame << ".ppm";
-
-        std::ofstream ppm_file_stream(filename.str(), std::ios::out | std::ios::binary);
-        ppm_file_stream << "P3\n";
-        ppm_file_stream << image_width << " " << image_height << "\n";
-        ppm_file_stream << max_color_component << "\n";
-
-        size_t triangles_count = triangles.size();
-        float y = 0.0;
-        float x = 0.0;
-        
-        for (int i = 0; i < image_height; i++)
-        {   
-            y = camera.calculate_pixel_y(i);
-            for (int j = 0; j < image_width; j++)
+            int r = static_cast<int>(background.x * 255);
+            int g = static_cast<int>(background.y * 255);
+            int b = static_cast<int>(background.z * 255);
+            
+            float closest_t = std::numeric_limits<float>::max();
+            
+            for (const CRT_mesh& mesh : objects)
             {
-                x = camera.calculate_pixel_x(j);
-                CRT_ray ray = camera.generate_ray(x,y,-1.0f);
-
-                int r = 10, g = 10, b = 10;
-                float closest_t = std::numeric_limits<float>::max();
-
-                for (size_t c = 0; c < triangles_count; c++)
+                for (size_t triangle_index = 0; triangle_index < mesh.get_triangle_count(); triangle_index++)
                 {
                     float t;
-                    if (intersect(triangles[c], ray,t))
+
+                    CRT_vector v0;
+                    CRT_vector v1;
+                    CRT_vector v2;
+
+                    mesh.get_triangle_vertices(triangle_index, v0 , v1, v2);
+
+                    CRT_triangle triangle(v0,v1,v2);
+
+                    if (intersect(triangle, ray,t))
                     {
                         if(t<closest_t) 
                         {
                             closest_t = t;
-                            r = colors[c].x;
-                            g = colors[c].y;
-                            b = colors[c].z;
+
+                            // coloring based on normal vector
+                            CRT_vector color(
+                                (triangle.normal_vector.x + 1.0f) * 127.5f,
+                                (triangle.normal_vector.y + 1.0f) * 127.5f,
+                                (triangle.normal_vector.z + 1.0f) * 127.5f
+                            );
+                            
+                            r = color.x;
+                            g = color.y;
+                            b = color.z;
                         }
                     }
                 }
-
-                ppm_file_stream << r << " " << g << " " << b << "\t";
             }
-            ppm_file_stream << '\n';
+
+            ppm_file_stream << r << " " << g << " " << b << "\t";
         }
+        ppm_file_stream << '\n';
     }
 }
