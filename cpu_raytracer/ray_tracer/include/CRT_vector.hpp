@@ -7,7 +7,7 @@ class CRT_vector
 {
 public:
     CRT_vector() noexcept : x(0), y(0), z(0) {}
-    CRT_vector(float x, float y, float z) noexcept : x(x), y(y), z(z) {};
+    CRT_vector(float _x, float _y, float _z) noexcept : x(_x), y(_y), z(_z) {};
     
     float length() const noexcept
     {
