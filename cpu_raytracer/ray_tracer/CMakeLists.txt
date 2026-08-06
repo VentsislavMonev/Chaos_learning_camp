@@ -11,7 +11,8 @@ endif()
 # Automatically grab all .cpp files in src/
 file(GLOB SOURCES "src/*.cpp")
 
-add_executable(raytracer ${SOURCES})
+add_executable(raytracer ${SOURCES}
+    include/CRT_light.hpp)
 
 # So #include "vec3.hpp" works without relative paths
 target_include_directories(raytracer PRIVATE include)

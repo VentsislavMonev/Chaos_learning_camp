@@ -124,6 +124,32 @@ void CRT_scene::parse_scene_file(const std::string &scene_file_name)
         camera = CRT_camera(camera_position, settings.image_width, settings.image_height, camera_matrix);
     }
 
+    // lights
+    if(document.HasMember("lights")&&document["lights"].IsArray())
+    {
+        const Value& lights_val = document["lights"];
+
+        size_t lights_count = lights_val.Size();
+        lights.reserve(lights_count);
+
+        // individual lights
+        for (size_t light_index = 0; light_index < lights_count; light_index++)
+        {
+            const Value& light_val = lights_val[light_index];
+            CRT_vector light_position;
+            int light_intensity = 0;
+            
+            // position
+            if (light_val.HasMember("position"))
+            light_position = parse_vector3(light_val["position"], file_name);
+            
+            // intensity
+            if (light_val.HasMember("intensity"))
+            light_intensity = light_val["intensity"].GetInt();
+            lights.emplace_back(light_position, light_intensity);
+        }
+    }
+
     // objects
     if(document.HasMember("objects")&&document["objects"].IsArray())
     {

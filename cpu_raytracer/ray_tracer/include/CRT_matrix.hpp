@@ -11,7 +11,7 @@ class CRT_matrix
     
 public:
     CRT_matrix() noexcept
-    {
+    {   
         matrix[0][0]=1.0f;matrix[0][1]=0.0f;matrix[0][2]=0.0f;
         matrix[1][0]=0.0f;matrix[1][1]=1.0f;matrix[1][2]=0.0f;
         matrix[2][0]=0.0f;matrix[2][1]=0.0f;matrix[2][2]=1.0f;
@@ -37,13 +37,13 @@ public:
                     result.matrix[i][j] += a.matrix[i][k] * b.matrix[k][j];
         return result;
     }
-
+    
     friend CRT_vector operator*(const CRT_vector& v, const CRT_matrix& mat) noexcept
     {
         return CRT_vector(
-            mat.matrix[0][0] * v.x + mat.matrix[0][1] * v.y + mat.matrix[0][2] * v.z,
-            mat.matrix[1][0] * v.x + mat.matrix[1][1] * v.y + mat.matrix[1][2] * v.z,
-            mat.matrix[2][0] * v.x + mat.matrix[2][1] * v.y + mat.matrix[2][2] * v.z
+            mat.matrix[0][0] * v.x + mat.matrix[1][0] * v.y + mat.matrix[2][0] * v.z,
+            mat.matrix[0][1] * v.x + mat.matrix[1][1] * v.y + mat.matrix[2][1] * v.z,
+            mat.matrix[0][2] * v.x + mat.matrix[1][2] * v.y + mat.matrix[2][2] * v.z
         );
     }
 
