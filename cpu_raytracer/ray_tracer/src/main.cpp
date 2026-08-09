@@ -149,6 +149,9 @@ CRT_vector shade_point( const CRT_hit& hit_point,
 {
     const CRT_material& material = materials[hit_point.material_index];
 
+    CRT_vector shading_normal = material.smooth_shading ? hit_point.shading_normal
+                                                        : hit_point.triangle.normal_vector;
+
     float red = 0.0f, green = 0.0f, blue = 0.0f;
 
     // cycles through every light to check for shadows 
@@ -170,7 +173,7 @@ CRT_vector shade_point( const CRT_hit& hit_point,
             continue;
 
         // shade with the smooth normal
-        float cos_law = std::max(0.0f, light_direction * hit_point.shading_normal);
+        float cos_law = std::max(0.0f, light_direction * shading_normal);
         float distance_squared = sphere_radius * sphere_radius;
 
         // how much does a light contributes
@@ -180,42 +183,6 @@ CRT_vector shade_point( const CRT_hit& hit_point,
         red   += contribution * material.albedo.x;
         green += contribution * material.albedo.y;
         blue  += contribution * material.albedo.z;
-    }
-
-    return CRT_vector(red, green, blue);
-}
-
-
-
-
-// Compute shading at a hit point from all lights
-CRT_vector shade_point( const CRT_hit& hit_point,
-                        const std::vector<CRT_light>& lights,
-                        const std::vector<CRT_mesh>& objects)
-{
-    float red = 0.0f, green = 0.0f, blue = 0.0f;
-
-    for (const CRT_light& light : lights)
-    {
-        CRT_vector light_direction = light.get_position() - hit_point.point;
-        float sphere_radius = light_direction.length();
-        light_direction.normalize();
-
-        // bias with the geometric normal, not the smooth one
-        CRT_ray shadow_ray(hit_point.point + hit_point.triangle.normal_vector * shadow_bias, light_direction);
-
-        if (is_shadow(shadow_ray, objects, sphere_radius))
-            continue;
-
-        // shade with the smooth (interpolated) normal
-        float cos_law = std::max(0.0f, light_direction * hit_point.shading_normal);
-        float distance_squared = sphere_radius * sphere_radius;
-
-        float contribution = (light.get_intensity() / (4.0f * 3.14159265f * distance_squared)) * cos_law * 255.0f;
-
-        red   += contribution;
-        green += contribution;
-        blue  += contribution;
     }
 
     return CRT_vector(red, green, blue);
@@ -256,10 +223,10 @@ CRT_vector trace_ray(const CRT_ray& ray,
         // if reflective
         case CRT_material_type::REFLECTIVE:
         {
-            CRT_vector shading_normal = hit_point.shading_normal;
+            CRT_vector normal = hit_point.shading_normal;
 
             // calculate reflected ray
-            CRT_vector reflected_dir = ray.direction - shading_normal * (2.0f * (ray.direction * shading_normal));
+            CRT_vector reflected_dir = ray.direction - normal * (2.0f * (ray.direction * normal));
             reflected_dir.normalize();
 
             CRT_ray reflected_ray(hit_point.point + hit_point.triangle.normal_vector * shadow_bias,
@@ -282,14 +249,14 @@ CRT_vector trace_ray(const CRT_ray& ray,
 
 int main()
 {
-    CRT_scene scene("../scene5.crtscene");
+    CRT_scene scene("../scene4.crtscene");
     const CRT_settings& settings = scene.get_settings();
     const CRT_camera& camera = scene.get_camera();
     const std::vector<CRT_mesh>& objects = scene.get_objects();
     const std::vector<CRT_material>& materials = scene.get_materials();
     const std::vector<CRT_light>& lights = scene.get_lights();
 
-    std::ofstream ppm_file_stream("output5.ppm");
+    std::ofstream ppm_file_stream("output4.ppm");
     ppm_file_stream << "P3\n" << settings.image_width << " " << settings.image_height << "\n255\n";
 
     for (int i = 0; i < settings.image_height; i++)

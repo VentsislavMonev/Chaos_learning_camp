@@ -6,7 +6,7 @@
 
 struct CRT_hit
 {    
-    float       t = 0.0f;
+    float t = 0.0f;
     CRT_vector point;
     CRT_vector barycentric;
 

@@ -42,7 +42,7 @@
 			"albedo": [
 				1, 1, 0
 			],
-			"smooth_shading": true
+			"smooth_shading": false
 		}			
 	],
 	
