@@ -10,29 +10,27 @@ static const int VERTICES_IN_TRIANGLE = 3;
 class CRT_mesh
 {
 public:
-    CRT_mesh()=default;
-    CRT_mesh(const std::vector<CRT_vector>& _vertices, const std::vector<int>& triangle_indices)
-        :vertices(_vertices), triangle_by_vertices_indices(triangle_indices) {}
+    CRT_mesh();
+    CRT_mesh(int material_index, const std::vector<CRT_vector>& _vertices, const std::vector<int>& triangle_indices);
     ~CRT_mesh()=default;
 
+    int get_material_index()                        const {return material_index;}
     const std::vector<CRT_vector>& get_vertices()   const {return vertices;}
     const std::vector<int>& get_triangle_indices()  const {return triangle_by_vertices_indices;}
+    CRT_vector get_vertex_normal(size_t index)      const {return vertex_normals[index];}
+    size_t get_triangle_count()                     const {return triangle_by_vertices_indices.size()/VERTICES_IN_TRIANGLE;}
 
-    size_t get_triangle_count() const {return triangle_by_vertices_indices.size()/VERTICES_IN_TRIANGLE;}
+    void get_triangle_vertices(size_t tri_idx, CRT_vector& v0, CRT_vector& v1, CRT_vector& v2) const;
+    void get_triangle_vertex_normals(size_t tri_idx, CRT_vector& n0, CRT_vector& n1, CRT_vector& n2) const;
 
-    void get_triangle_vertices(size_t tri_idx, CRT_vector& v0, CRT_vector& v1, CRT_vector& v2) const
-    {
-        if (tri_idx >= get_triangle_count())
-            throw std::out_of_range("CRT_mesh::get_triangle_vertices - triangle index out of range");
-
-        v0 = vertices[triangle_by_vertices_indices[tri_idx*3 + 0]];
-        v1 = vertices[triangle_by_vertices_indices[tri_idx*3 + 1]];
-        v2 = vertices[triangle_by_vertices_indices[tri_idx*3 + 2]];
-    }
+    void calculate_vertex_normals();
 
 private:
+    int material_index;
     std::vector<CRT_vector> vertices;
     std::vector<int> triangle_by_vertices_indices;
+
+    std::vector<CRT_vector> vertex_normals;
 };
 
 

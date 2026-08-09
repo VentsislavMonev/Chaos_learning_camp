@@ -150,6 +150,51 @@ void CRT_scene::parse_scene_file(const std::string &scene_file_name)
         }
     }
 
+    // materials
+    if (document.HasMember("materials") && document["materials"].IsArray())
+    {
+        const Value& materials_val = document["materials"];
+
+        materials.reserve(materials_val.Size());
+
+        // single material
+        for (SizeType i = 0; i < materials_val.Size(); ++i)
+        {
+            const Value& material_val = materials_val[i];
+
+            CRT_material_type type = CRT_material_type::DIFFUSE;
+            CRT_vector albedo(1.0f, 1.0f, 1.0f);
+            bool smooth_shading = false;
+
+            // type
+            if (material_val.HasMember("type") && material_val["type"].IsString())
+            {
+                std::string type_str = material_val["type"].GetString();
+
+                if (type_str == "diffuse")
+                    type = CRT_material_type::DIFFUSE;
+                else if (type_str == "reflective")
+                    type = CRT_material_type::REFLECTIVE;
+                else
+                    throw std::runtime_error("CRT_scene: Unknown material type: " + type_str);
+            }
+
+            // albedo
+            if (material_val.HasMember("albedo"))
+                albedo = parse_vector3(material_val["albedo"], scene_file_name);
+
+            // smooth_shading
+            if (material_val.HasMember("smooth_shading"))
+                smooth_shading = material_val["smooth_shading"].GetBool();
+
+            materials.emplace_back(CRT_material{
+                type,
+                albedo,
+                smooth_shading
+            });
+        }
+    }
+
     // objects
     if(document.HasMember("objects")&&document["objects"].IsArray())
     {
@@ -165,7 +210,12 @@ void CRT_scene::parse_scene_file(const std::string &scene_file_name)
  
             std::vector<CRT_vector> vertices;
             std::vector<int> triangle_indices;
+            int material_index;
  
+            // material_index
+            if (object_val.HasMember("material_index"))
+                material_index = object_val["material_index"].GetInt();
+
             // vertices
             if (object_val.HasMember("vertices"))
                 vertices = parse_vertices(object_val["vertices"], file_name);
@@ -174,7 +224,7 @@ void CRT_scene::parse_scene_file(const std::string &scene_file_name)
             if (object_val.HasMember("triangles"))
                 triangle_indices = parse_triangle_indices(object_val["triangles"], file_name);
  
-            objects.emplace_back(vertices, triangle_indices);
+            objects.emplace_back(material_index, vertices, triangle_indices);
         }
     }
 }
