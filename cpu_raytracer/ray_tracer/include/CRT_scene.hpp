@@ -27,7 +27,7 @@ public:
     const CRT_camera& get_camera()                  const {return camera;}
     const CRT_settings& get_settings()              const {return settings;}
     const std::vector<CRT_light>& get_lights()      const {return lights;}
-    const std::vector<CRT_material> get_materials() const {return materials;}
+    const std::vector<CRT_material>& get_materials() const {return materials;}
     const std::vector<CRT_mesh>& get_objects()      const {return objects;}
         
 private:

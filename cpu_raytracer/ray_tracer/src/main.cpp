@@ -223,13 +223,16 @@ CRT_vector trace_ray(const CRT_ray& ray,
         // if reflective
         case CRT_material_type::REFLECTIVE:
         {
-            CRT_vector normal = hit_point.shading_normal;
+
+            CRT_vector shading_normal = materials[hit_point.material_index].smooth_shading 
+                                        ? hit_point.shading_normal
+                                        : hit_point.triangle.normal_vector;
 
             // calculate reflected ray
-            CRT_vector reflected_dir = ray.direction - normal * (2.0f * (ray.direction * normal));
+            CRT_vector reflected_dir = ray.direction - shading_normal * (2.0f * (ray.direction * shading_normal));
             reflected_dir.normalize();
 
-            CRT_ray reflected_ray(hit_point.point + hit_point.triangle.normal_vector * shadow_bias,
+            CRT_ray reflected_ray(hit_point.point + shading_normal * shadow_bias,
                                    reflected_dir);
 
             // trace reflected ray recursivly

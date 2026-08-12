@@ -210,7 +210,7 @@ void CRT_scene::parse_scene_file(const std::string &scene_file_name)
  
             std::vector<CRT_vector> vertices;
             std::vector<int> triangle_indices;
-            int material_index;
+            int material_index = 0;
  
             // material_index
             if (object_val.HasMember("material_index"))

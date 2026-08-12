@@ -51,7 +51,7 @@ void CRT_mesh::calculate_vertex_normals()
         CRT_vector edge1 = v1 - v0;
         CRT_vector edge2 = v2 - v0;
 
-        CRT_vector face_normal = (edge1 ^ edge2.normalize());
+        CRT_vector face_normal = (edge1 ^ edge2);
 
         vertex_normals[i0] += face_normal;
         vertex_normals[i1] += face_normal;
