@@ -52,12 +52,9 @@ public:
         return (*this) *= inv;
     }
 
-    CRT_vector& operator-() noexcept
+    CRT_vector operator-() noexcept
     {
-        x=-x;
-        y=-y;
-        z=-z;
-        return *this;
+        return CRT_vector(-x,-y,-z);
     }
     
 // member fields

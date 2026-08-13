@@ -6,13 +6,16 @@
 enum class CRT_material_type
 {
     DIFFUSE,
-    REFLECTIVE
+    REFLECTIVE,
+    REFRACTIVE,
+    CONSTANT
 };
 
 struct CRT_material
 {
     CRT_material_type type;
     CRT_vector albedo;
+    float ior;
     bool smooth_shading;
 };
 

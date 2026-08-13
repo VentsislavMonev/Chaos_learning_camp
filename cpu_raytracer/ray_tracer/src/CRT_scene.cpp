@@ -164,6 +164,7 @@ void CRT_scene::parse_scene_file(const std::string &scene_file_name)
 
             CRT_material_type type = CRT_material_type::DIFFUSE;
             CRT_vector albedo(1.0f, 1.0f, 1.0f);
+            float ior = 0.0f;
             bool smooth_shading = false;
 
             // type
@@ -175,6 +176,10 @@ void CRT_scene::parse_scene_file(const std::string &scene_file_name)
                     type = CRT_material_type::DIFFUSE;
                 else if (type_str == "reflective")
                     type = CRT_material_type::REFLECTIVE;
+                else if (type_str == "refractive")
+                    type = CRT_material_type::REFRACTIVE;
+                else if (type_str == "constant")
+                    type = CRT_material_type::CONSTANT;
                 else
                     throw std::runtime_error("CRT_scene: Unknown material type: " + type_str);
             }
@@ -183,6 +188,10 @@ void CRT_scene::parse_scene_file(const std::string &scene_file_name)
             if (material_val.HasMember("albedo"))
                 albedo = parse_vector3(material_val["albedo"], scene_file_name);
 
+            // ior
+            if (material_val.HasMember("ior"))
+                ior = material_val["ior"].GetFloat();
+
             // smooth_shading
             if (material_val.HasMember("smooth_shading"))
                 smooth_shading = material_val["smooth_shading"].GetBool();
@@ -190,6 +199,7 @@ void CRT_scene::parse_scene_file(const std::string &scene_file_name)
             materials.emplace_back(CRT_material{
                 type,
                 albedo,
+                ior,
                 smooth_shading
             });
         }
