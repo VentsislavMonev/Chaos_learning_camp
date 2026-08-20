@@ -5,8 +5,16 @@ CRT_mesh::CRT_mesh()
     calculate_vertex_normals();
 }
 
-CRT_mesh::CRT_mesh(int _material_index, const std::vector<CRT_vector> &_vertices, const std::vector<int> &triangle_indices)
-    : material_index(_material_index), vertices(_vertices), triangle_by_vertices_indices(triangle_indices)
+CRT_mesh::CRT_mesh(
+    int _material_index,
+    const std::vector<CRT_vector> & _vertices,
+    const std::vector<int> & _triangle_indices,
+    const std::vector<CRT_vector>& _uvs
+)
+    : material_index(_material_index), 
+    vertices(_vertices), 
+    triangle_by_vertices_indices(_triangle_indices),
+    uvs(_uvs)
 {
     calculate_vertex_normals();
 }
@@ -27,6 +35,21 @@ void CRT_mesh::get_triangle_vertex_normals(size_t tri_idx, CRT_vector &n0, CRT_v
     n0 = vertex_normals[triangle_by_vertices_indices[base + 0]];
     n1 = vertex_normals[triangle_by_vertices_indices[base + 1]];
     n2 = vertex_normals[triangle_by_vertices_indices[base + 2]];
+}
+
+void CRT_mesh::get_triangle_uvs(size_t tri_idx, CRT_vector &uv0, CRT_vector &uv1, CRT_vector &uv2) const
+{
+    if (uvs.empty()) 
+    { 
+        uv0 = uv1 = uv2 = CRT_vector(0,0,0); 
+        return; 
+    }
+    int i0 = triangle_by_vertices_indices[tri_idx * VERTICES_IN_TRIANGLE + 0];
+    int i1 = triangle_by_vertices_indices[tri_idx * VERTICES_IN_TRIANGLE + 1];
+    int i2 = triangle_by_vertices_indices[tri_idx * VERTICES_IN_TRIANGLE + 2];
+    uv0 = uvs[i0];
+    uv1 = uvs[i1];
+    uv2 = uvs[i2];
 }
 
 void CRT_mesh::calculate_vertex_normals()

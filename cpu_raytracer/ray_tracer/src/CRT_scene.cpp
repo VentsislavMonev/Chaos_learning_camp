@@ -1,8 +1,7 @@
 #include "CRT_scene.hpp"
 
 #include <fstream>
-#include "rapidjson/document.h"
-#include "rapidjson/istreamwrapper.h"
+#include <string>
 
 using namespace rapidjson;
 
@@ -62,20 +61,9 @@ std::vector<int> parse_triangle_indices(const Value& arr, const std::string& sce
     return indices;
 }
 
-void CRT_scene::parse_scene_file(const std::string &scene_file_name)
+
+void CRT_scene::parse_settings(const Document &document)
 {
-    std::ifstream file(scene_file_name);
-    if(!file) throw std::runtime_error("CRT_scene: Could not open scene file: " + scene_file_name);
-
-    IStreamWrapper isw(file);
-    Document document;
-    document.ParseStream(isw);
-
-    if(document.HasParseError())
-        throw std::runtime_error("CRT_scene: Failed to parse JSON in file: " + scene_file_name);
-    
-
-    // settings
     if (document.HasMember("settings") && document["settings"].IsObject())
     {
         const Value& settings_val = document["settings"];
@@ -98,8 +86,10 @@ void CRT_scene::parse_scene_file(const std::string &scene_file_name)
                 settings.image_height = img_settings["height"].GetInt();
         }
     }
+}
 
-    // camera
+void CRT_scene::parse_camera(const Document &document)
+{
     if(document.HasMember("camera")&&document["camera"].IsObject())
     {
         const Value& camera_val = document["camera"];
@@ -110,7 +100,7 @@ void CRT_scene::parse_scene_file(const std::string &scene_file_name)
         if(camera_val.HasMember("matrix")&&camera_val["matrix"].IsArray())
         {
             if (camera_val["matrix"].Size() != 9)
-                throw std::runtime_error("CRT_scene: camera matrix must have exactly 9 elements in file: "+ scene_file_name);
+                throw std::runtime_error("CRT_scene: camera matrix must have exactly 9 elements in file: "+ file_name);
             
             camera_matrix = CRT_matrix( camera_val["matrix"][0].GetFloat(), camera_val["matrix"][1].GetFloat(), camera_val["matrix"][2].GetFloat(), 
                                         camera_val["matrix"][3].GetFloat(), camera_val["matrix"][4].GetFloat(), camera_val["matrix"][5].GetFloat(), 
@@ -123,8 +113,10 @@ void CRT_scene::parse_scene_file(const std::string &scene_file_name)
 
         camera = CRT_camera(camera_position, settings.image_width, settings.image_height, camera_matrix);
     }
+}
 
-    // lights
+void CRT_scene::parse_lights(const Document &document)
+{
     if(document.HasMember("lights")&&document["lights"].IsArray())
     {
         const Value& lights_val = document["lights"];
@@ -149,8 +141,68 @@ void CRT_scene::parse_scene_file(const std::string &scene_file_name)
             lights.emplace_back(light_position, light_intensity);
         }
     }
+}
 
-    // materials
+void CRT_scene::parse_textures(const Document &document, std::unordered_map<std::string, int> &texture_name_to_index)
+{
+    fs::path scene_dir = fs::path(file_name).parent_path();
+
+    if (document.HasMember("textures") && document["textures"].IsArray())
+    {
+        const Value& textures_val = document["textures"];
+        SizeType count = textures_val.Size();
+        textures.reserve(count);
+ 
+        for (SizeType i = 0; i < count; ++i)
+        {
+            const Value& tex_val = textures_val[i];
+            CRT_texture tex;
+
+            if (tex_val.HasMember("name"))
+                tex.name = tex_val["name"].GetString();
+
+            std::string type_str = tex_val["type"].GetString();
+
+            if (type_str == "albedo")
+            {
+                tex.type = CRT_texture_type::ALBEDO;
+                if (tex_val.HasMember("albedo"))
+                    tex.albedo = parse_vector3(tex_val["albedo"], file_name);
+            }
+            else if (type_str == "edges")
+            {
+                tex.type        = CRT_texture_type::EDGES;
+                tex.edge_color  = parse_vector3(tex_val["edge_color"], file_name);
+                tex.inner_color = parse_vector3(tex_val["inner_color"], file_name);
+                tex.edge_width  = tex_val["edge_width"].GetFloat();
+            }
+            else if (type_str == "checker")
+            {
+                tex.type        = CRT_texture_type::CHECKER;
+                tex.color_A     = parse_vector3(tex_val["color_A"], file_name);
+                tex.color_B     = parse_vector3(tex_val["color_B"], file_name);
+                tex.square_size = tex_val["square_size"].GetFloat();
+            }
+            else if (type_str == "bitmap")
+            {
+                tex.type                    = CRT_texture_type::BITMAP;
+                std::string relative_path   = tex_val["file_path"].GetString();
+                tex.file_path               = scene_dir.string() + relative_path;
+                tex.load_bitmap();
+            }
+            else
+            {
+                throw std::runtime_error("CRT_scene: Unknown texture type: " + type_str);
+            }
+
+            texture_name_to_index[tex.name] = static_cast<int>(textures.size());
+            textures.push_back(tex);
+        }
+    }
+}
+
+void CRT_scene::parse_materials(const Document &document, const std::unordered_map<std::string, int> &texture_name_to_index)
+{
     if (document.HasMember("materials") && document["materials"].IsArray())
     {
         const Value& materials_val = document["materials"];
@@ -163,7 +215,7 @@ void CRT_scene::parse_scene_file(const std::string &scene_file_name)
             const Value& material_val = materials_val[i];
 
             CRT_material_type type = CRT_material_type::DIFFUSE;
-            CRT_vector albedo(1.0f, 1.0f, 1.0f);
+            int texture_index = -1;
             float ior = 0.0f;
             bool smooth_shading = false;
 
@@ -183,10 +235,16 @@ void CRT_scene::parse_scene_file(const std::string &scene_file_name)
                 else
                     throw std::runtime_error("CRT_scene: Unknown material type: " + type_str);
             }
-
+            
             // albedo
-            if (material_val.HasMember("albedo"))
-                albedo = parse_vector3(material_val["albedo"], scene_file_name);
+            if (material_val.HasMember("albedo") && material_val["albedo"].IsString())
+            {
+                std::string tex_name = material_val["albedo"].GetString();
+                auto it = texture_name_to_index.find(tex_name);
+                if (it == texture_name_to_index.end())
+                    throw std::runtime_error("CRT_scene: Material references unknown texture: " + tex_name);
+                texture_index = it->second;
+            }
 
             // ior
             if (material_val.HasMember("ior"))
@@ -198,14 +256,16 @@ void CRT_scene::parse_scene_file(const std::string &scene_file_name)
 
             materials.emplace_back(CRT_material{
                 type,
-                albedo,
+                texture_index,
                 ior,
                 smooth_shading
             });
         }
     }
+}
 
-    // objects
+void CRT_scene::parse_objects(const Document &document)
+{
     if(document.HasMember("objects")&&document["objects"].IsArray())
     {
         const Value& objects_val = document["objects"];
@@ -217,8 +277,9 @@ void CRT_scene::parse_scene_file(const std::string &scene_file_name)
         for (size_t object_index = 0; object_index < objects_count; object_index++)
         {
             const Value& object_val = objects_val[object_index];
- 
+            
             std::vector<CRT_vector> vertices;
+            std::vector<CRT_vector> uvs;
             std::vector<int> triangle_indices;
             int material_index = 0;
  
@@ -229,12 +290,51 @@ void CRT_scene::parse_scene_file(const std::string &scene_file_name)
             // vertices
             if (object_val.HasMember("vertices"))
                 vertices = parse_vertices(object_val["vertices"], file_name);
+
+            // uvs
+            if (object_val.HasMember("uvs"))
+                uvs = parse_vertices(object_val["uvs"], file_name);
  
             // triangle indices
             if (object_val.HasMember("triangles"))
                 triangle_indices = parse_triangle_indices(object_val["triangles"], file_name);
  
-            objects.emplace_back(material_index, vertices, triangle_indices);
+            objects.emplace_back(material_index, vertices, triangle_indices, uvs);
         }
     }
+}
+
+void CRT_scene::parse_scene_file(const std::string &scene_file_name)
+{
+    file_name = scene_file_name;
+    
+    std::ifstream file(file_name);
+    if(!file) throw std::runtime_error("CRT_scene: Could not open scene file: " + file_name);
+
+    IStreamWrapper isw(file);
+    Document document;
+    document.ParseStream(isw);
+
+    if(document.HasParseError())
+        throw std::runtime_error("CRT_scene: Failed to parse JSON in file: " + file_name);
+    
+
+    // settings
+    parse_settings(document);
+
+    // camera
+    parse_camera(document);
+
+    // lights
+    parse_lights(document);
+
+    // textures
+    std::unordered_map<std::string, int> texture_name_to_index;
+    parse_textures(document, texture_name_to_index);    
+
+    // materials
+    parse_materials(document, texture_name_to_index);
+
+    // objects
+    parse_objects(document);
 }

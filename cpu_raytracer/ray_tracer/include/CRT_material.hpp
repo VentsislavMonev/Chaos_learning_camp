@@ -14,7 +14,7 @@ enum class CRT_material_type
 struct CRT_material
 {
     CRT_material_type type;
-    CRT_vector albedo;
+    int texture_index = -1;
     float ior;
     bool smooth_shading;
 };
