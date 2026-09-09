@@ -187,7 +187,11 @@ void CRT_scene::parse_textures(const Document &document, std::unordered_map<std:
             {
                 tex.type                    = CRT_texture_type::BITMAP;
                 std::string relative_path   = tex_val["file_path"].GetString();
-                tex.file_path               = scene_dir.string() + relative_path;
+                if (!relative_path.empty() && (relative_path[0] == '/' || relative_path[0] == '\\'))
+                    relative_path.erase(0, 1);
+
+                fs::path full_path = scene_dir / relative_path;
+                tex.file_path = full_path.string();
                 tex.load_bitmap();
             }
             else

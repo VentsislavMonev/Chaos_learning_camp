@@ -1,3 +1,4 @@
+#include <numbers>
 #include "CRT_camera.hpp"
 
 void CRT_camera::initialize_image_width(int _image_width)
@@ -91,9 +92,9 @@ void CRT_camera::translate(const CRT_vector &move_direction)
 }
 
 
-void CRT_camera::pan(const float degrees)
+void CRT_camera::pan(float degrees)
 {
-    const float rads = degrees * (M_PIf/180.f);
+    const float rads = degrees * (std::numbers::pi_v<float>/180.f);
     const CRT_matrix rotate_around_y = 
     {
         cosf(rads)  , 0.f   , -sinf(rads),
@@ -104,12 +105,12 @@ void CRT_camera::pan(const float degrees)
     rotation_matrix = rotation_matrix*rotate_around_y;
 }
 
-void CRT_camera::tilt(const float degrees)
+void CRT_camera::tilt(float degrees)
 {
-    const float rads = degrees * (M_PIf/180.f);
+    const float rads = degrees * (std::numbers::pi_v<float>/180.f);
     const CRT_matrix rotate_around_x = 
     {
-        1.f   ,   0.f      , 0.f,
+        1.f   ,    0.f      , 0.f,
         0.f   , cosf(rads)  , sinf(rads),
         0.f   , -sinf(rads) , cosf(rads)
     };
@@ -117,14 +118,14 @@ void CRT_camera::tilt(const float degrees)
     rotation_matrix = rotation_matrix*rotate_around_x;
 }
 
-void CRT_camera::roll(const float degrees)
+void CRT_camera::roll(float degrees)
 {
-    const float rads = degrees * (M_PIf/180.f);
+    const float rads = degrees * (std::numbers::pi_v<float>/180.f);
     const CRT_matrix rotate_around_z = 
     {
         cosf(rads)  , sinf(rads), 0.f,
         -sinf(rads) , cosf(rads), 0.f,
-        0.f        ,    0.f   , 1.f
+        0.f         ,    0.f    , 1.f
     };
 
     rotation_matrix = rotation_matrix*rotate_around_z;

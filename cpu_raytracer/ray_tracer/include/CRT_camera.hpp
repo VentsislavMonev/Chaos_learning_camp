@@ -53,9 +53,9 @@ public:
 
     // rotation
 
-    void pan(const float degrees);
-    void tilt(const float degrees);
-    void roll(const float degrees);
+    void pan(float degrees);
+    void tilt(float degrees);
+    void roll(float degrees);
 
 // getters 
 public:

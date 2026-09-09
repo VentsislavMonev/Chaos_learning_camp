@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <numbers>
 
 CRT_render::CRT_render(const std::string& scene_file)
     : scene(scene_file)
@@ -183,7 +184,7 @@ CRT_vector CRT_render::shade_diffuse(const CRT_hit& hit_point) const
         // how much does a light contributes
         //
         // these numbers come from the surface area of a sphere:
-        float contribution = (light.get_intensity() / (4.0f * 3.14159265f * distance_squared)) * cos_law * max_color_component;
+        float contribution = (light.get_intensity() / (4.0f * std::numbers::pi_v<float> * distance_squared)) * cos_law * max_color_component;
 
         // tint by the materials albedo per-channel
         result += contribution * texture.sample(hit_point);
@@ -350,6 +351,8 @@ void CRT_render::render(const std::string& output_file)
     // file we will write to
     std::ofstream ppm_file_stream(output_file);
     ppm_file_stream << "P3\n" << settings.image_width << " " << settings.image_height << "\n255\n";
+
+    camera.pan(10.0f);
 
     // go through each pixel
     for (int i = 0; i < settings.image_height; i++)

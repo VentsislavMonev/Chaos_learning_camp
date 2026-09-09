@@ -34,7 +34,7 @@ public:
     
     void parse_scene_file(const std::string& scene_file_name);
     
-    const CRT_camera& get_camera()                      const {return camera;}
+          CRT_camera& get_camera()                            {return camera;}
     const CRT_settings& get_settings()                  const {return settings;}
     const std::vector<CRT_light>& get_lights()          const {return lights;}
     const std::vector<CRT_texture>& get_textures()      const {return textures;}

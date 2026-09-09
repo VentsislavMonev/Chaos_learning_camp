@@ -25,7 +25,7 @@ private:
     CRT_scene scene;
 
     const CRT_settings&                 settings;
-    const CRT_camera&                   camera;
+          CRT_camera&                   camera;
     const std::vector<CRT_mesh>&        objects;
     const std::vector<CRT_texture>&     textures;
     const std::vector<CRT_material>&    materials;
