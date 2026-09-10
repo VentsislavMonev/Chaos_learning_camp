@@ -4,14 +4,14 @@
 
 struct CRT_ray
 {
-    CRT_ray(const CRT_vector& _origin, const CRT_vector& _dircetion)
+    CRT_ray(const CRT_vector3& _origin, const CRT_vector3& _dircetion)
     {
         origin=_origin;
         direction=_dircetion;
     }
     
-    CRT_vector origin;
-    CRT_vector direction;
+    CRT_vector3 origin;
+    CRT_vector3 direction;
 };
 
 #endif

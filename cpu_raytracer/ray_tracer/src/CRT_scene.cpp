@@ -11,12 +11,12 @@ CRT_scene::CRT_scene(const std::string &scene_file_name)
     parse_scene_file(scene_file_name);
 }
 
-CRT_vector parse_vector3(const Value& arr, const std::string& scene_file_name)
+CRT_vector3 parse_vector3(const Value& arr, const std::string& scene_file_name)
 {
     if (!arr.IsArray() || arr.Size() != 3)
         throw std::runtime_error("CRT_scene: Expected a JSON array of 3 numbers for a vector in file: "+ scene_file_name);
 
-    return CRT_vector(
+    return CRT_vector3(
         arr[0].GetFloat(),
         arr[1].GetFloat(),
         arr[2].GetFloat()
@@ -24,13 +24,13 @@ CRT_vector parse_vector3(const Value& arr, const std::string& scene_file_name)
 }
 
 // Parses a flat JSON array of numbers (grouped in 3s: x,y,z,x,y,z,...) into vertices.
-std::vector<CRT_vector> parse_vertices(const Value& arr, const std::string& scene_file_name)
+std::vector<CRT_vector3> parse_vertices(const Value& arr, const std::string& scene_file_name)
 {
     size_t arr_size = arr.Size();
     if (!arr.IsArray() || arr_size % 3 != 0)
         throw std::runtime_error("CRT_scene: Vertices array must contain a multiple of 3 numbers in file: "+ scene_file_name);
 
-    std::vector<CRT_vector> vertices;
+    std::vector<CRT_vector3> vertices;
     vertices.reserve(arr_size / 3);
 
     for (SizeType i = 0; i < arr_size; i += 3)
@@ -94,7 +94,7 @@ void CRT_scene::parse_camera(const Document &document)
     {
         const Value& camera_val = document["camera"];
         CRT_matrix camera_matrix;
-        CRT_vector camera_position;
+        CRT_vector3 camera_position;
 
         // matrix 
         if(camera_val.HasMember("matrix")&&camera_val["matrix"].IsArray())
@@ -128,7 +128,7 @@ void CRT_scene::parse_lights(const Document &document)
         for (size_t light_index = 0; light_index < lights_count; light_index++)
         {
             const Value& light_val = lights_val[light_index];
-            CRT_vector light_position;
+            CRT_vector3 light_position;
             int light_intensity = 0;
             
             // position
@@ -282,8 +282,8 @@ void CRT_scene::parse_objects(const Document &document)
         {
             const Value& object_val = objects_val[object_index];
             
-            std::vector<CRT_vector> vertices;
-            std::vector<CRT_vector> uvs;
+            std::vector<CRT_vector3> vertices;
+            std::vector<CRT_vector3> uvs;
             std::vector<int> triangle_indices;
             int material_index = 0;
  

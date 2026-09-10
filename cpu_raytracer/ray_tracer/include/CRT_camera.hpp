@@ -11,8 +11,8 @@ class CRT_camera
 {
 public:
     CRT_camera();
-    CRT_camera(const CRT_vector& _position, int _image_width, int _image_height);
-    CRT_camera(const CRT_vector& _position, int _image_width, int _image_height, CRT_matrix matrix);
+    CRT_camera(const CRT_vector3& _position, int _image_width, int _image_height);
+    CRT_camera(const CRT_vector3& _position, int _image_width, int _image_height, CRT_matrix matrix);
 
 // ray generation
 public:
@@ -36,7 +36,7 @@ public:
 
     CRT_ray generate_ray(float pixel_x, float pixel_y, float pixel_z) const
     {
-        CRT_vector direction(pixel_x,pixel_y,pixel_z);
+        CRT_vector3 direction(pixel_x,pixel_y,pixel_z);
         direction = direction * rotation_matrix;
         direction.normalize();
         return CRT_ray(position,direction);
@@ -49,7 +49,7 @@ public:
     void truck(float distance);
     void dolly(float distance);
     void piedestal(float distance);
-    void translate(const CRT_vector& move_direction);
+    void translate(const CRT_vector3& move_direction);
 
     // rotation
 
@@ -59,7 +59,7 @@ public:
 
 // getters 
 public:
-    CRT_vector get_position()const          {return position;}
+    CRT_vector3 get_position()const          {return position;}
     CRT_matrix get_rotation_matrix ()const  {return rotation_matrix;}
     int get_image_width()const              {return image_width;}
     int get_image_height()const             {return image_height;}
@@ -67,7 +67,7 @@ public:
 
 // setters 
 public: 
-    void set_position(const CRT_vector& _position);
+    void set_position(const CRT_vector3& _position);
     void set_image_width(int _image_width);
     void set_image_height(int _image_height);
 
@@ -80,7 +80,7 @@ private:
 
 // members
 private:
-    CRT_vector position;
+    CRT_vector3 position;
     CRT_matrix rotation_matrix;
     int image_width;
     int image_height;

@@ -7,10 +7,10 @@
 struct CRT_hit
 {    
     float t = 0.0f;
-    CRT_vector point;
-    CRT_vector barycentric;
-    CRT_vector uv;
-    CRT_vector shading_normal;
+    CRT_vector3 point;
+    CRT_vector3 barycentric;
+    CRT_vector3 uv;
+    CRT_vector3 shading_normal;
     CRT_triangle triangle;
     
     int material_index  = -1;

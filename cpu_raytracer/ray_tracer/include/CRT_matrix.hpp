@@ -38,9 +38,9 @@ public:
         return result;
     }
     
-    friend CRT_vector operator*(const CRT_vector& v, const CRT_matrix& mat) noexcept
+    friend CRT_vector3 operator*(const CRT_vector3& v, const CRT_matrix& mat) noexcept
     {
-        return CRT_vector(
+        return CRT_vector3(
             mat.matrix[0][0] * v.x + mat.matrix[1][0] * v.y + mat.matrix[2][0] * v.z,
             mat.matrix[0][1] * v.x + mat.matrix[1][1] * v.y + mat.matrix[2][1] * v.z,
             mat.matrix[0][2] * v.x + mat.matrix[1][2] * v.y + mat.matrix[2][2] * v.z

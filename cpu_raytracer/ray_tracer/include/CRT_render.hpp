@@ -35,8 +35,8 @@ private:
 private:
     // low level triangle intersection
     bool intersect( const CRT_triangle& T, const CRT_ray& ray, CRT_hit& hit_point,
-                    const CRT_vector& n0, const CRT_vector& n1, const CRT_vector& n2,
-                    const CRT_vector& uv0, const CRT_vector& uv1, const CRT_vector& uv2) const;
+                    const CRT_vector3& n0, const CRT_vector3& n1, const CRT_vector3& n2,
+                    const CRT_vector3& uv0, const CRT_vector3& uv1, const CRT_vector3& uv2) const;
 
     // same as intersect but it just checks if its shadow without the other things
     // refractive materials just dont leave shadows for now
@@ -53,26 +53,26 @@ private:
 private:
 
     // shade material with diffuse material
-    CRT_vector shade_diffuse    (const CRT_hit& hit_point) const;
+    CRT_vector3 shade_diffuse    (const CRT_hit& hit_point) const;
 
     // shade material with reflective material
-    CRT_vector shade_reflective (const CRT_ray& ray, 
+    CRT_vector3 shade_reflective (const CRT_ray& ray, 
                                 const CRT_hit& hit_point,
-                                const CRT_vector& background, 
+                                const CRT_vector3& background, 
                                 int depth) const;
 
     // shade material with refractive material
-    CRT_vector shade_refraction (const CRT_ray& ray, 
+    CRT_vector3 shade_refraction (const CRT_ray& ray, 
                                 const CRT_hit& hit_point,
-                                const CRT_vector& background, 
+                                const CRT_vector3& background, 
                                 int depth) const;
 
     // shade material with constant material
-    CRT_vector shade_constant   (const CRT_hit& hit_point) const;
+    CRT_vector3 shade_constant   (const CRT_hit& hit_point) const;
 
 private:
     // recursively traces a single ray and returns its color
-    CRT_vector trace_ray(const CRT_ray& ray, const CRT_vector& background, int depth = 0) const;
+    CRT_vector3 trace_ray(const CRT_ray& ray, const CRT_vector3& background, int depth = 0) const;
 
 // static constants
 private:

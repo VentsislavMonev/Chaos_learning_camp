@@ -17,8 +17,8 @@ CRT_render::CRT_render(const std::string& scene_file)
 }
 
 bool CRT_render::intersect(const CRT_triangle& T, const CRT_ray& ray, CRT_hit& hit_point,
-                            const CRT_vector& n0, const CRT_vector& n1, const CRT_vector& n2,
-                            const CRT_vector& uv0, const CRT_vector& uv1, const CRT_vector& uv2) const
+                            const CRT_vector3& n0, const CRT_vector3& n1, const CRT_vector3& n2,
+                            const CRT_vector3& uv0, const CRT_vector3& uv1, const CRT_vector3& uv2) const
 {
     float R_projection = T.normal_vector * ray.direction;
     float RT_distance  = T.normal_vector * (T.V0() - ray.origin);
@@ -31,11 +31,11 @@ bool CRT_render::intersect(const CRT_triangle& T, const CRT_ray& ray, CRT_hit& h
     if (t <= 0) return false;
 
     // The point of intersection P
-    CRT_vector P = ray.origin + t * ray.direction;
+    CRT_vector3 P = ray.origin + t * ray.direction;
 
-    CRT_vector V0_P = P - T.V0();
-    CRT_vector V1_P = P - T.V1();
-    CRT_vector V2_P = P - T.V2();
+    CRT_vector3 V0_P = P - T.V0();
+    CRT_vector3 V1_P = P - T.V1();
+    CRT_vector3 V2_P = P - T.V2();
 
     // if P is inside the triangle
     if ( T.normal_vector*(T.E0()^V0_P) >= 0.0f &&
@@ -51,7 +51,7 @@ bool CRT_render::intersect(const CRT_triangle& T, const CRT_ray& ray, CRT_hit& h
         // give values to hit point
         hit_point.t                 = t;
         hit_point.point             = P;
-        hit_point.barycentric       = CRT_vector(u, v, w);
+        hit_point.barycentric       = CRT_vector3(u, v, w);
         hit_point.triangle          = T;
         hit_point.shading_normal    = (n0 * w + n1 * u + n2 * v).normalize();
         hit_point.uv                = uv0 * w + uv1 * u + uv2 * v;
@@ -71,11 +71,11 @@ bool CRT_render::intersect_shadow(const CRT_triangle& T, const CRT_ray& ray, flo
     float t = RT_distance / R_projection;
     if (t <= 0.0f || t >= max_distance) return false;
 
-    CRT_vector P = ray.origin + t * ray.direction;
+    CRT_vector3 P = ray.origin + t * ray.direction;
 
-    CRT_vector V0_P = P - T.V0();
-    CRT_vector V1_P = P - T.V1();
-    CRT_vector V2_P = P - T.V2();
+    CRT_vector3 V0_P = P - T.V0();
+    CRT_vector3 V1_P = P - T.V1();
+    CRT_vector3 V2_P = P - T.V2();
 
     return  T.normal_vector*(T.E0()^V0_P) >= 0.0f &&
             T.normal_vector*(T.E1()^V1_P) >= 0.0f &&
@@ -97,16 +97,16 @@ bool CRT_render::intersect_scene(const CRT_ray& ray, CRT_hit& hit_point) const
         for (size_t triangle_index = 0; triangle_index < count; triangle_index++)
         {
             // get vertices by triangle index
-            CRT_vector v0, v1, v2;
+            CRT_vector3 v0, v1, v2;
             mesh.get_triangle_vertices(triangle_index, v0, v1, v2);
             CRT_triangle triangle(v0, v1, v2);
 
             // get vertices normals by triangle index
-            CRT_vector n0, n1, n2;
+            CRT_vector3 n0, n1, n2;
             mesh.get_triangle_vertex_normals(triangle_index, n0, n1, n2);
 
             // get uvs
-            CRT_vector uv0, uv1, uv2;
+            CRT_vector3 uv0, uv1, uv2;
             mesh.get_triangle_uvs(triangle_index, uv0, uv1, uv2);
 
             // gets the closest hit_point to a triangle
@@ -137,7 +137,7 @@ bool CRT_render::is_shadow(const CRT_ray& shadow_ray, float max_distance) const
         size_t count = mesh.get_triangle_count();
         for (size_t i = 0; i < count; i++)
         {
-            CRT_vector v0, v1, v2;
+            CRT_vector3 v0, v1, v2;
             mesh.get_triangle_vertices(i, v0, v1, v2);
             CRT_triangle triangle(v0, v1, v2);
 
@@ -149,22 +149,22 @@ bool CRT_render::is_shadow(const CRT_ray& shadow_ray, float max_distance) const
     return false;
 }
 
-CRT_vector CRT_render::shade_diffuse(const CRT_hit& hit_point) const
+CRT_vector3 CRT_render::shade_diffuse(const CRT_hit& hit_point) const
 {
     const CRT_material& material    = materials[hit_point.material_index];
     const CRT_texture& texture      = textures[hit_point.texture_index];
 
     // get the normal vector that we will check depending if the smooth_shading flag is raised
-    CRT_vector shading_normal = material.smooth_shading ? hit_point.shading_normal
+    CRT_vector3 shading_normal = material.smooth_shading ? hit_point.shading_normal
                                                         : hit_point.triangle.normal_vector;
 
-    CRT_vector result;
+    CRT_vector3 result;
 
     // cycles through every light to check for shadows
     for (const CRT_light& light : lights)
     {
         // get light vector
-        CRT_vector light_direction = light.get_position() - hit_point.point;
+        CRT_vector3 light_direction = light.get_position() - hit_point.point;
 
         // sphere for the light so we know if it traveled a lot or is near the hit point
         float sphere_radius = light_direction.length();
@@ -190,26 +190,26 @@ CRT_vector CRT_render::shade_diffuse(const CRT_hit& hit_point) const
         result += contribution * texture.sample(hit_point);
     }
 
-    return CRT_vector(  std::min(max_color_component, result.x),
+    return CRT_vector3(  std::min(max_color_component, result.x),
                         std::min(max_color_component, result.y),
                         std::min(max_color_component, result.z));
 }
 
-CRT_vector CRT_render::shade_reflective(const CRT_ray& ray, 
+CRT_vector3 CRT_render::shade_reflective(const CRT_ray& ray, 
                                         const CRT_hit& hit_point,
-                                        const CRT_vector& background, 
+                                        const CRT_vector3& background, 
                                         int depth) const
 {
     const CRT_material& material    = materials[hit_point.material_index];
     const CRT_texture& texture      = textures[hit_point.texture_index];
 
     // get the normal vector that we will check depending if the smooth_shading flag is raised
-    CRT_vector shading_normal = material.smooth_shading
+    CRT_vector3 shading_normal = material.smooth_shading
                                     ? hit_point.shading_normal
                                     : hit_point.triangle.normal_vector;
 
     // calculate reflected ray
-    CRT_vector reflected_dir = ray.direction - shading_normal * (2.0f * (ray.direction * shading_normal));
+    CRT_vector3 reflected_dir = ray.direction - shading_normal * (2.0f * (ray.direction * shading_normal));
     reflected_dir.normalize();
 
     // create a reflected ray from the hit point
@@ -217,28 +217,28 @@ CRT_vector CRT_render::shade_reflective(const CRT_ray& ray,
                             reflected_dir);
 
     // trace reflected ray recursivly
-    CRT_vector reflected_color = trace_ray(reflected_ray, background, depth + 1);
+    CRT_vector3 reflected_color = trace_ray(reflected_ray, background, depth + 1);
 
     // sample the color
-    CRT_vector sampled_color = texture.sample(hit_point);
+    CRT_vector3 sampled_color = texture.sample(hit_point);
 
     // multiplying by albedo so the mirror can be seen and not blend in
-    return CRT_vector(
+    return CRT_vector3(
         reflected_color.x * sampled_color.x,
         reflected_color.y * sampled_color.y,
         reflected_color.z * sampled_color.z
     );
 }
 
-CRT_vector CRT_render::shade_refraction(const CRT_ray& ray, 
+CRT_vector3 CRT_render::shade_refraction(const CRT_ray& ray, 
                                         const CRT_hit& hit_point,
-                                        const CRT_vector& background, 
+                                        const CRT_vector3& background, 
                                         int depth) const
 {
     // get the normal vector that we will check depending if the smooth_shading flag is raised
     const CRT_material& material = materials[hit_point.material_index];
 
-    CRT_vector normal = material.smooth_shading
+    CRT_vector3 normal = material.smooth_shading
                         ? hit_point.shading_normal
                         : hit_point.triangle.normal_vector;
 
@@ -263,7 +263,7 @@ CRT_vector CRT_render::shade_refraction(const CRT_ray& ray,
     float sin_alpha = sqrtf(1.0f - cos_alpha*cos_alpha);
 
     // reflected ray
-    CRT_vector reflection_direction = ray.direction + 2 * (cos_alpha) * normal;
+    CRT_vector3 reflection_direction = ray.direction + 2 * (cos_alpha) * normal;
     CRT_ray reflection_ray(hit_point.point + (normal * REFRACTION_BIAS), reflection_direction);
 
     // angle is big enough for refraction and reflection
@@ -274,13 +274,13 @@ CRT_vector CRT_render::shade_refraction(const CRT_ray& ray,
         float cos_beta = sqrtf(1 - sin_beta * sin_beta);
 
         // refracted ray
-        CRT_vector refraction_direction = cos_beta * (-normal) +
+        CRT_vector3 refraction_direction = cos_beta * (-normal) +
                                           (ray.direction + cos_alpha * normal).getNormalized() * sin_beta;
         CRT_ray refraction_ray(hit_point.point + ((-normal)*REFRACTION_BIAS), refraction_direction);
-        CRT_vector refracted_color = trace_ray(refraction_ray, background, depth + 1);
+        CRT_vector3 refracted_color = trace_ray(refraction_ray, background, depth + 1);
 
         // trace reflected ray
-        CRT_vector reflected_color = trace_ray(reflection_ray, background, depth + 1);
+        CRT_vector3 reflected_color = trace_ray(reflection_ray, background, depth + 1);
 
         // get the color we need with fresnel
         float fresnel_constant = 0.5f * (1.0f - cos_alpha)*
@@ -298,14 +298,14 @@ CRT_vector CRT_render::shade_refraction(const CRT_ray& ray,
     }
 }
 
-CRT_vector CRT_render::shade_constant(const CRT_hit& hit_point) const
+CRT_vector3 CRT_render::shade_constant(const CRT_hit& hit_point) const
 {
     const CRT_texture& texture = textures[hit_point.texture_index];
     return texture.sample(hit_point) * max_color_component;
 }
 
 // Trace a single ray and return its color
-CRT_vector CRT_render::trace_ray(const CRT_ray& ray, const CRT_vector& background, int depth) const
+CRT_vector3 CRT_render::trace_ray(const CRT_ray& ray, const CRT_vector3& background, int depth) const
 {
     // if max length is reached
     if (depth >= MAX_RAY_DEPTH)
@@ -363,7 +363,7 @@ void CRT_render::render(const std::string& output_file)
             float x = camera.calculate_pixel_x(j);
             CRT_ray ray = camera.generate_ray(x, y, -1.0f);
 
-            CRT_vector color = trace_ray(ray, settings.background_color);
+            CRT_vector3 color = trace_ray(ray, settings.background_color);
 
             ppm_file_stream << static_cast<int>(color.x) << " "
                             << static_cast<int>(color.y) << " "

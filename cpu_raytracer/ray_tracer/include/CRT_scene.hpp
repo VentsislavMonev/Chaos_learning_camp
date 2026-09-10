@@ -22,7 +22,7 @@ struct CRT_settings
 {
     int image_width;
     int image_height;
-    CRT_vector background_color;
+    CRT_vector3 background_color;
 };
 
 

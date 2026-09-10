@@ -13,7 +13,7 @@ void CRT_camera::initialize_image_height(int _image_height)
     image_height = _image_height;
 }
 
-void CRT_camera::set_position(const CRT_vector &_position)
+void CRT_camera::set_position(const CRT_vector3 &_position)
 {
     position = _position;
 }
@@ -39,14 +39,14 @@ void CRT_camera::set_rotation_matrix(const CRT_matrix &matrix)
 
 CRT_camera::CRT_camera()
 {
-    position = CRT_vector();
+    position = CRT_vector3();
     rotation_matrix = CRT_matrix();
     image_width=1;
     image_height=1;
     aspect_ratio=1;
 }
 
-CRT_camera::CRT_camera(const CRT_vector &_position, int _image_width, int _image_height)
+CRT_camera::CRT_camera(const CRT_vector3 &_position, int _image_width, int _image_height)
 {
     set_position(_position);
     initialize_image_width(_image_width);
@@ -54,7 +54,7 @@ CRT_camera::CRT_camera(const CRT_vector &_position, int _image_width, int _image
     aspect_ratio = static_cast<float>(image_width)/static_cast<float>(image_height);
 }
 
-CRT_camera::CRT_camera(const CRT_vector &_position, int _image_width, int _image_height, CRT_matrix matrix)
+CRT_camera::CRT_camera(const CRT_vector3 &_position, int _image_width, int _image_height, CRT_matrix matrix)
 {
     set_position(_position);
     initialize_image_width(_image_width);
@@ -66,28 +66,28 @@ CRT_camera::CRT_camera(const CRT_vector &_position, int _image_width, int _image
 
 void CRT_camera::truck(float distance)
 {
-    CRT_vector new_x(distance,0,0);
+    CRT_vector3 new_x(distance,0,0);
     new_x = new_x*rotation_matrix;
     position+=new_x;
 }
 
 void CRT_camera::dolly(float distance)
 {
-    CRT_vector new_z(0,0, distance);
+    CRT_vector3 new_z(0,0, distance);
     new_z = new_z*rotation_matrix;
     position+=new_z;
 }
 
 void CRT_camera::piedestal(float distance)
 {
-    CRT_vector new_y(0, distance,0);
+    CRT_vector3 new_y(0, distance,0);
     new_y = new_y*rotation_matrix;
     position+=new_y;
 }
 
-void CRT_camera::translate(const CRT_vector &move_direction)
+void CRT_camera::translate(const CRT_vector3 &move_direction)
 {
-    CRT_vector move_direction_world_space = move_direction*rotation_matrix;
+    CRT_vector3 move_direction_world_space = move_direction*rotation_matrix;
     position+=move_direction_world_space;
 }
 

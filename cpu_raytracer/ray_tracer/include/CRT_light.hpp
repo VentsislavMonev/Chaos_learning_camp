@@ -7,13 +7,13 @@ class CRT_light
 {
 public:
     CRT_light();
-    CRT_light(const CRT_vector& _position, int _intensity);
+    CRT_light(const CRT_vector3& _position, int _intensity);
 
-    const CRT_vector& get_position() const;
+    const CRT_vector3& get_position() const;
     int get_intensity() const;
     
 private:
-    CRT_vector position;
+    CRT_vector3 position;
     int intensity;
 };
 
