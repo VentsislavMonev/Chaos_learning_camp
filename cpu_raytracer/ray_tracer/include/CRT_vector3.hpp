@@ -1,5 +1,5 @@
-#ifndef CRT_VECTOR_HPP
-#define CRT_VECTOR_HPP
+#ifndef CRT_VECTOR3_HPP
+#define CRT_VECTOR3_HPP
 
 #include <iostream>
 #include <math.h>

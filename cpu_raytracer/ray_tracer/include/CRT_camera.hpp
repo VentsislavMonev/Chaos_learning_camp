@@ -3,7 +3,7 @@
 
 #include <math.h>
 #include <stdexcept>
-#include "CRT_vector.hpp"
+#include "CRT_vector3.hpp"
 #include "CRT_matrix.hpp"
 #include "CRT_ray.hpp"
 

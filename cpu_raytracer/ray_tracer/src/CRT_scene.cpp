@@ -302,8 +302,8 @@ void CRT_scene::parse_objects(const Document &document)
             // triangle indices
             if (object_val.HasMember("triangles"))
                 triangle_indices = parse_triangle_indices(object_val["triangles"], file_name);
- 
-            objects.emplace_back(material_index, vertices, triangle_indices, uvs);
+
+            objects.emplace_back(material_index, vertices, uvs, triangle_indices);
         }
     }
 }

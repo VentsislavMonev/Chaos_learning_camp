@@ -1,7 +1,7 @@
 #ifndef CRT_MATRIX_HPP
 #define CRT_MATRIX_HPP
 
-#include "CRT_vector.hpp"
+#include "CRT_vector3.hpp"
 
 // this shouldnt be changed its in a variable so it isnt a magic number
 static const int DIMENSIONS = 3;

@@ -1,27 +1,23 @@
 #include "CRT_mesh.hpp"
 
-CRT_mesh::CRT_mesh()
-{
-    calculate_vertex_normals();
-}
-
 CRT_mesh::CRT_mesh(
     int _material_index,
     const std::vector<CRT_vector3> & _vertices,
-    const std::vector<int> & _triangle_indices,
-    const std::vector<CRT_vector3>& _uvs
+    const std::vector<CRT_vector3>& _uvs,
+    const std::vector<int> & _triangle_indices
 )
     : material_index(_material_index), 
     vertices(_vertices), 
-    triangle_by_vertices_indices(_triangle_indices),
-    uvs(_uvs)
+    uvs(_uvs),
+    triangle_by_vertices_indices(_triangle_indices)
 {
     calculate_vertex_normals();
+    build_triangles();
 }
 
 void CRT_mesh::get_triangle_vertices(size_t tri_idx, CRT_vector3 &v0, CRT_vector3 &v1, CRT_vector3 &v2) const
 {
-    if (tri_idx >= get_triangle_count())
+    if (tri_idx >= triangle_by_vertices_indices.size()/VERTICES_IN_TRIANGLE)
         throw std::out_of_range("CRT_mesh::get_triangle_vertices - triangle index out of range");
 
     v0 = vertices[triangle_by_vertices_indices[tri_idx*3 + 0]];
@@ -85,5 +81,18 @@ void CRT_mesh::calculate_vertex_normals()
     for(CRT_vector3& normal : vertex_normals)
     {
         normal.normalize();
+    }
+}
+
+void CRT_mesh::build_triangles()
+{
+    size_t count = triangle_by_vertices_indices.size()/VERTICES_IN_TRIANGLE;
+    precomputed_triangles.reserve(count);
+
+    for (size_t i = 0; i < count; ++i)
+    {
+        CRT_vector3 v0, v1, v2;
+        get_triangle_vertices(i, v0, v1, v2);
+        precomputed_triangles.emplace_back(v0, v1, v2);
     }
 }

@@ -1,7 +1,7 @@
 #ifndef CRT_MATERIAL_HPP
 #define CRT_MATERIAL_HPP
 
-#include "CRT_vector.hpp"
+#include "CRT_vector3.hpp"
 
 enum class CRT_material_type
 {

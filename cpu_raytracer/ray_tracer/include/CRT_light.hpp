@@ -1,7 +1,7 @@
 #ifndef CRT_LIGHT_HPP
 #define CRT_LIGHT_HPP
 
-#include "CRT_vector.hpp"
+#include "CRT_vector3.hpp"
 
 class CRT_light
 {

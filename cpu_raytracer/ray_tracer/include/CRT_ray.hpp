@@ -1,6 +1,6 @@
 #ifndef CRT_RAY_HPP
 #define CRT_RAY_HPP
-#include "CRT_vector.hpp"
+#include "CRT_vector3.hpp"
 
 struct CRT_ray
 {

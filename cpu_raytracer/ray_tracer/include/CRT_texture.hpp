@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <string>
 #include <stdexcept>
-#include "CRT_vector.hpp"
+#include "CRT_vector3.hpp"
 #include "CRT_hit.hpp"
 
 #include "stb_image.h" 

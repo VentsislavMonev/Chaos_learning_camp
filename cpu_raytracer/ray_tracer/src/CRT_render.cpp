@@ -16,15 +16,18 @@ CRT_render::CRT_render(const std::string& scene_file)
 {
 }
 
-bool CRT_render::intersect(const CRT_triangle& T, const CRT_ray& ray, CRT_hit& hit_point,
+bool CRT_render::intersect( const CRT_triangle& T, const CRT_ray& ray, CRT_hit& hit_point,
                             const CRT_vector3& n0, const CRT_vector3& n1, const CRT_vector3& n2,
                             const CRT_vector3& uv0, const CRT_vector3& uv1, const CRT_vector3& uv2) const
 {
-    float R_projection = T.normal_vector * ray.direction;
-    float RT_distance  = T.normal_vector * (T.V0() - ray.origin);
+    const CRT_vector3& normal = T.normal_vector;
+    
+    float R_projection = normal * ray.direction;
 
     // checks if the ray and the plane of the triangle are parallel and if the ray is facing the plane
     if (fabs(R_projection) < 1e-6f) return false;
+
+    float RT_distance  = normal * (T.V0() - ray.origin);
 
     // distance from ray origin to intersection point
     float t = RT_distance / R_projection;
@@ -33,20 +36,29 @@ bool CRT_render::intersect(const CRT_triangle& T, const CRT_ray& ray, CRT_hit& h
     // The point of intersection P
     CRT_vector3 P = ray.origin + t * ray.direction;
 
+    // Vectors from each triangle vertex to the hit point P.
     CRT_vector3 V0_P = P - T.V0();
     CRT_vector3 V1_P = P - T.V1();
     CRT_vector3 V2_P = P - T.V2();
 
+    // Cross each edge with the vector to P
+    CRT_vector3 C0 = T.edge0 ^ V0_P;
+    CRT_vector3 C1 = T.edge1 ^ V1_P;
+    CRT_vector3 C2 = T.edge2 ^ V2_P;
+
+    float d0 = normal * C0;
+    float d1 = normal * C1;
+    float d2 = normal * C2;
+
     // if P is inside the triangle
-    if ( T.normal_vector*(T.E0()^V0_P) >= 0.0f &&
-         T.normal_vector*(T.E1()^V1_P) >= 0.0f &&
-         T.normal_vector*(T.E2()^V2_P) >= 0.0f)
+    if ( d0 >= 0.0f && d1 >= 0.0f && d2 >= 0.0f)
     {
         // barycentric coords
-        float denom = (T.E0()^T.E2()).length();
-        float u = (V0_P^T.E2()).length() / denom;
-        float v = (T.E0()^V0_P).length() / denom;
-        float w = 1.0f - u - v;
+        float inv_area = T.inv_double_area;
+
+        float w = d1 * inv_area;
+        float u = d2 * inv_area;
+        float v = 1.0f - u - w;
 
         // give values to hit point
         hit_point.t                 = t;
@@ -77,9 +89,9 @@ bool CRT_render::intersect_shadow(const CRT_triangle& T, const CRT_ray& ray, flo
     CRT_vector3 V1_P = P - T.V1();
     CRT_vector3 V2_P = P - T.V2();
 
-    return  T.normal_vector*(T.E0()^V0_P) >= 0.0f &&
-            T.normal_vector*(T.E1()^V1_P) >= 0.0f &&
-            T.normal_vector*(T.E2()^V2_P) >= 0.0f;
+    return  T.normal_vector*(T.edge0^V0_P) >= 0.0f &&
+            T.normal_vector*(T.edge1^V1_P) >= 0.0f &&
+            T.normal_vector*(T.edge2^V2_P) >= 0.0f;
 }
 
 // Find closest intersection across the whole scene
@@ -94,12 +106,9 @@ bool CRT_render::intersect_scene(const CRT_ray& ray, CRT_hit& hit_point) const
         size_t count = mesh.get_triangle_count();
 
         // for every triangle in the object
-        for (size_t triangle_index = 0; triangle_index < count; triangle_index++)
+        for (size_t triangle_index = 0; triangle_index < count; ++triangle_index)
         {
-            // get vertices by triangle index
-            CRT_vector3 v0, v1, v2;
-            mesh.get_triangle_vertices(triangle_index, v0, v1, v2);
-            CRT_triangle triangle(v0, v1, v2);
+            CRT_triangle triangle = mesh.get_precomputed_triangles()[triangle_index];
 
             // get vertices normals by triangle index
             CRT_vector3 n0, n1, n2;
@@ -137,9 +146,7 @@ bool CRT_render::is_shadow(const CRT_ray& shadow_ray, float max_distance) const
         size_t count = mesh.get_triangle_count();
         for (size_t i = 0; i < count; i++)
         {
-            CRT_vector3 v0, v1, v2;
-            mesh.get_triangle_vertices(i, v0, v1, v2);
-            CRT_triangle triangle(v0, v1, v2);
+            CRT_triangle triangle = mesh.get_precomputed_triangles()[i];
 
             // checks if the shadow ray intersects this single triangle
             if (intersect_shadow(triangle, shadow_ray, max_distance))
@@ -351,8 +358,6 @@ void CRT_render::render(const std::string& output_file)
     // file we will write to
     std::ofstream ppm_file_stream(output_file);
     ppm_file_stream << "P3\n" << settings.image_width << " " << settings.image_height << "\n255\n";
-
-    camera.pan(10.0f);
 
     // go through each pixel
     for (int i = 0; i < settings.image_height; i++)
