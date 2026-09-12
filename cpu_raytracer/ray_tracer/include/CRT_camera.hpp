@@ -2,6 +2,7 @@
 #define CRT_CAMERA_HPP
 
 #include <math.h>
+#include <numbers>
 #include <stdexcept>
 #include "CRT_vector3.hpp"
 #include "CRT_matrix.hpp"
@@ -14,8 +15,7 @@ public:
     CRT_camera(const CRT_vector3& _position, int _image_width, int _image_height);
     CRT_camera(const CRT_vector3& _position, int _image_width, int _image_height, CRT_matrix matrix);
 
-// ray generation
-public:
+    // ray generation
 
     float calculate_pixel_y(int i) const
     {
@@ -42,7 +42,6 @@ public:
         return CRT_ray(position,direction);
     }
 
-// movement 
 public:
     // translation 
 
@@ -57,16 +56,16 @@ public:
     void tilt(float degrees);
     void roll(float degrees);
 
-// getters 
-public:
+    // getters
+
     CRT_vector3 get_position()const          {return position;}
     CRT_matrix get_rotation_matrix ()const  {return rotation_matrix;}
     int get_image_width()const              {return image_width;}
     int get_image_height()const             {return image_height;}
     float get_aspect_ratio()const           {return aspect_ratio;}
 
-// setters 
-public: 
+    // setters
+
     void set_position(const CRT_vector3& _position);
     void set_image_width(int _image_width);
     void set_image_height(int _image_height);

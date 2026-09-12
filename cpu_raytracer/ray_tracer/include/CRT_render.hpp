@@ -20,17 +20,6 @@ public:
     // Runs the full render loop and writes the result to output_file as a PPM image.
     void render(const std::string& output_file);
 
-// data
-private:
-    CRT_scene scene;
-
-    const CRT_settings&                 settings;
-          CRT_camera&                   camera;
-    const std::vector<CRT_mesh>&        objects;
-    const std::vector<CRT_texture>&     textures;
-    const std::vector<CRT_material>&    materials;
-    const std::vector<CRT_light>&       lights;
-
 // intersection functions
 private:
     // low level triangle intersection
@@ -70,14 +59,24 @@ private:
     // shade material with constant material
     CRT_vector3 shade_constant   (const CRT_hit& hit_point) const;
 
-private:
     // recursively traces a single ray and returns its color
     CRT_vector3 trace_ray(const CRT_ray& ray, const CRT_vector3& background, int depth = 0) const;
 
-// static constants
+
+// data
 private:
+    CRT_scene scene;
+
+    const CRT_settings&                 settings;
+          CRT_camera&                   camera;
+    const std::vector<CRT_mesh>&        objects;
+    const std::vector<CRT_texture>&     textures;
+    const std::vector<CRT_material>&    materials;
+    const std::vector<CRT_light>&       lights;
+
     // render-loop constants
-    static constexpr float max_color_component = 255.0f;
+
+    static constexpr float max_color_component  = 255.0f;
     static constexpr float SHADOW_BIAS          = 1e-2f;
     static constexpr float REFRACTION_BIAS      = 1e-2f;
     static constexpr int   MAX_RAY_DEPTH        = 20;

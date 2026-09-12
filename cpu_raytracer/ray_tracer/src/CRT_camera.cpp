@@ -1,4 +1,3 @@
-#include <numbers>
 #include "CRT_camera.hpp"
 
 void CRT_camera::initialize_image_width(int _image_width)

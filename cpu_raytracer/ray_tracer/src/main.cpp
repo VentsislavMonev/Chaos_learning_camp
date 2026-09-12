@@ -4,7 +4,7 @@ int main()
 {
    try
     {
-        CRT_render renderer("gun.crtscene");
+        CRT_render renderer("scene5.crtscene");
         renderer.render("output5.ppm");
     }
     catch (const std::exception& e)

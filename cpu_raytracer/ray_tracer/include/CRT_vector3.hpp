@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <math.h>
-class CRT_vector3
+struct CRT_vector3
 {
 public:
     CRT_vector3() noexcept : x(0.0f), y(0.0f), z(0.0f) {}

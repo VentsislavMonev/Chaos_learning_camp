@@ -1,7 +1,5 @@
 #include "CRT_texture.hpp"
 
-#include <stdexcept>
-
 CRT_vector3 CRT_texture::sample(const CRT_hit &hit_point) const
 {
     switch (type)

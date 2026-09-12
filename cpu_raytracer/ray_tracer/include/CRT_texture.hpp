@@ -18,7 +18,7 @@ enum class CRT_texture_type
 };
 
 // TODO: later add polymorphism
-class CRT_texture
+struct CRT_texture
 {
 public:
     CRT_vector3 sample(const CRT_hit& hit_point) const;

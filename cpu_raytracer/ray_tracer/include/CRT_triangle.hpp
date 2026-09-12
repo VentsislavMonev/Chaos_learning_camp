@@ -5,9 +5,8 @@
 
 static const int verts_in_triangle = 3;
 
-class CRT_triangle
-{
-    public: 
+struct CRT_triangle
+{ 
     CRT_triangle() = default;
     CRT_triangle(const CRT_vector3& A, const CRT_vector3& B, const CRT_vector3& C) noexcept : verts {A,B,C}
     {

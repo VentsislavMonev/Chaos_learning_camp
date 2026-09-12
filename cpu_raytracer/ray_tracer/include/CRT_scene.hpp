@@ -31,7 +31,6 @@ class CRT_scene
 public:
     CRT_scene(const std::string& scene_file_name);
 
-    
     void parse_scene_file(const std::string& scene_file_name);
     
           CRT_camera& get_camera()                            {return camera;}

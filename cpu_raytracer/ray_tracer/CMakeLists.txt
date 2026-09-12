@@ -1,3 +1,4 @@
+
 cmake_minimum_required(VERSION 3.15)
 project(RayTracer CXX)
 
@@ -12,17 +13,17 @@ endif()
 # Automatically grab all .cpp files in src/
 file(GLOB SOURCES "src/*.cpp")
 
-add_executable(raytracer ${SOURCES}
-    include/CRT_light.hpp)
+add_executable(raytracer
+    ${SOURCES}
+    external/stb/stb_image.cpp
+)
 
-# So #include "vec3.hpp" works without relative paths
-target_include_directories(raytracer PRIVATE include)
-
-# Optional: multithreading support
-find_package(OpenMP)
-if(OpenMP_CXX_FOUND)
-    target_link_libraries(raytracer PUBLIC OpenMP::OpenMP_CXX)
-endif()
+# Include directories
+target_include_directories(raytracer PRIVATE
+    include
+    external/stb
+    external/rapidjson
+)
 
 if(MSVC)
     target_compile_options(raytracer PRIVATE
