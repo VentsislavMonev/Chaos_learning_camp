@@ -1,9 +1,5 @@
 #include "CRT_render.hpp"
-#include <fstream>
-#include <algorithm>
-#include <cmath>
-#include <limits>
-#include <numbers>
+
 
 CRT_render::CRT_render(const std::string& scene_file)
     : scene(scene_file)
@@ -353,27 +349,77 @@ CRT_vector3 CRT_render::trace_ray(const CRT_ray& ray, const CRT_vector3& backgro
     return background * max_color_component;
 }
 
-void CRT_render::render(const std::string& output_file)
-{
-    // file we will write to
-    std::ofstream ppm_file_stream(output_file);
-    ppm_file_stream << "P3\n" << settings.image_width << " " << settings.image_height << "\n255\n";
 
-    // go through each pixel
-    for (int i = 0; i < settings.image_height; i++)
+
+
+
+void CRT_render::render_bucket(const CRT_bucket& bucket, std::vector<CRT_vector3>& image_buffer) const
+{
+    for (int i = bucket.y0; i < bucket.y1; ++i)
     {
         float y = camera.calculate_pixel_y(i);
-        for (int j = 0; j < settings.image_width; j++)
+        for (int j = bucket.x0; j < bucket.x1; ++j)
         {
             float x = camera.calculate_pixel_x(j);
             CRT_ray ray = camera.generate_ray(x, y, -1.0f);
 
-            CRT_vector3 color = trace_ray(ray, settings.background_color);
-
-            ppm_file_stream << static_cast<int>(color.x) << " "
-                            << static_cast<int>(color.y) << " "
-                            << static_cast<int>(color.z) << "\t";
+            // each pixel belongs to exactly one bucket, so no locking is needed
+            image_buffer[static_cast<size_t>(i) * settings.image_width + j] =
+                trace_ray(ray, settings.background_color);
         }
-        ppm_file_stream << '\n';
     }
+}
+
+void CRT_render::write_buffer_to_file(const std::string &output_file, const std::vector<CRT_vector3> &image_buffer) const
+{
+    const int width  = settings.image_width;
+    const int height = settings.image_height;
+    
+    std::ofstream file(output_file);
+    if(!file) throw std::runtime_error("Failed to open output file: " + output_file);
+    
+    file << "P3\n" << width << ' ' << height << "\n" << static_cast<int>(max_color_component) << "\n";
+    
+    std::string row;
+    const int int_size_times_3 = 12;
+    row.reserve(static_cast<size_t>(width) * int_size_times_3);
+
+    std::function<int(float)> to_byte = [](float c) { return std::clamp(static_cast<int>(c), 0, static_cast<int>(max_color_component)); };
+    
+    for (int i = 0; i < height; ++i)
+    {
+        row.clear();
+
+        for (int j = 0; j < width; ++j)
+        {
+            const CRT_vector3& c = image_buffer[static_cast<size_t>(i) * width + j];
+
+            row += std::to_string(to_byte(c.x)) + ' '
+                 + std::to_string(to_byte(c.y)) + ' '
+                 + std::to_string(to_byte(c.z)) + '\t';
+        }
+
+        row += '\n';
+        file << row;
+    }
+    
+    file.close();
+    if(!file) throw std::runtime_error("Failed to close output file: " + output_file);
+    
+}
+
+void CRT_render::render(const std::string& output_file)
+{
+    std::vector<CRT_vector3> image_buffer(static_cast<size_t>(settings.image_width) * settings.image_height);
+    const std::vector<CRT_bucket> buckets = CRT_make_buckets(settings.image_width, settings.image_height);
+
+    // render every bucket on the pool
+    {
+        CRT_thread_pool pool;
+        for (const CRT_bucket& bucket : buckets)
+            pool.enqueue([this, bucket, &image_buffer] { render_bucket(bucket, image_buffer); });
+        pool.wait();
+    }
+
+    write_buffer_to_file(output_file, image_buffer);
 }
