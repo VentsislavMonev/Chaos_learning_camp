@@ -12,22 +12,21 @@ CRT_render::CRT_render(const std::string& scene_file)
 {
 }
 
-bool CRT_render::intersect( const CRT_triangle& T, const CRT_ray& ray, CRT_hit& hit_point,
-                            const CRT_vector3& n0, const CRT_vector3& n1, const CRT_vector3& n2,
-                            const CRT_vector3& uv0, const CRT_vector3& uv1, const CRT_vector3& uv2) const
+bool CRT_render::intersect(const CRT_triangle& T, const CRT_ray& ray, 
+                           float t_max, float& t_out, float& w_out, float& u_out)const
 {
     const CRT_vector3& normal = T.normal_vector;
     
     float R_projection = normal * ray.direction;
 
-    // checks if the ray and the plane of the triangle are parallel and if the ray is facing the plane
+    // checks if the ray and the plane of the triangle are parallel 
     if (fabs(R_projection) < 1e-6f) return false;
 
     float RT_distance  = normal * (T.V0() - ray.origin);
 
     // distance from ray origin to intersection point
     float t = RT_distance / R_projection;
-    if (t <= 0) return false;
+    if (t <= 0.0f || t >= t_max) return false;
 
     // The point of intersection P
     CRT_vector3 P = ray.origin + t * ray.direction;
@@ -37,99 +36,82 @@ bool CRT_render::intersect( const CRT_triangle& T, const CRT_ray& ray, CRT_hit& 
     CRT_vector3 V1_P = P - T.V1();
     CRT_vector3 V2_P = P - T.V2();
 
-    // Cross each edge with the vector to P
-    CRT_vector3 C0 = T.edge0 ^ V0_P;
-    CRT_vector3 C1 = T.edge1 ^ V1_P;
-    CRT_vector3 C2 = T.edge2 ^ V2_P;
-
-    float d0 = normal * C0;
-    float d1 = normal * C1;
-    float d2 = normal * C2;
-
     // if P is inside the triangle
-    if ( d0 >= 0.0f && d1 >= 0.0f && d2 >= 0.0f)
-    {
-        // barycentric coords
-        float inv_area = T.inv_double_area;
+    float d0 = normal * (T.edge0 ^ V0_P);
+    if (!(d0 >= 0.0f)) return false;
+    
+    float d1 = normal * (T.edge1 ^ V1_P);
+    if (!(d1 >= 0.0f)) return false;
 
-        float w = d1 * inv_area;
-        float u = d2 * inv_area;
-        float v = 1.0f - u - w;
-
-        // give values to hit point
-        hit_point.t                 = t;
-        hit_point.point             = P;
-        hit_point.barycentric       = CRT_vector3(u, v, w);
-        hit_point.triangle          = T;
-        hit_point.shading_normal    = (n0 * w + n1 * u + n2 * v).normalize();
-        hit_point.uv                = uv0 * w + uv1 * u + uv2 * v;
-
-        return true;
-    }
-    return false;
-}
-
-bool CRT_render::intersect_shadow(const CRT_triangle& T, const CRT_ray& ray, float max_distance) const
-{
-    float R_projection = T.normal_vector * ray.direction;
-    float RT_distance  = T.normal_vector * (T.V0() - ray.origin);
-
-    if (fabs(R_projection) < 1e-6f) return false;
-
-    float t = RT_distance / R_projection;
-    if (t <= 0.0f || t >= max_distance) return false;
-
-    CRT_vector3 P = ray.origin + t * ray.direction;
-
-    CRT_vector3 V0_P = P - T.V0();
-    CRT_vector3 V1_P = P - T.V1();
-    CRT_vector3 V2_P = P - T.V2();
-
-    return  T.normal_vector*(T.edge0^V0_P) >= 0.0f &&
-            T.normal_vector*(T.edge1^V1_P) >= 0.0f &&
-            T.normal_vector*(T.edge2^V2_P) >= 0.0f;
+    float d2 = normal * (T.edge2 ^ V2_P);
+    if (!(d2 >= 0.0f)) return false;
+ 
+    // keep the best values
+    t_out = t;
+    w_out = d1 * T.inv_double_area;
+    u_out = d2 * T.inv_double_area;
+    
+    return true;
 }
 
 // Find closest intersection across the whole scene
 bool CRT_render::intersect_scene(const CRT_ray& ray, CRT_hit& hit_point) const
 {
-    bool hit_anything = false;
+    const CRT_mesh* best_mesh = nullptr;
+    size_t best_index = 0;
     float closest_t = std::numeric_limits<float>::max();
+    float best_w = 0.0f;
+    float best_u = 0.0f;
 
     // for every object
     for (const CRT_mesh& mesh : objects)
     {
+        const std::vector<CRT_triangle>& triangles = mesh.get_precomputed_triangles();
         size_t count = mesh.get_triangle_count();
 
         // for every triangle in the object
-        for (size_t triangle_index = 0; triangle_index < count; ++triangle_index)
+        for (size_t i = 0; i < count; ++i)
         {
-            CRT_triangle triangle = mesh.get_precomputed_triangles()[triangle_index];
+            float t, w, u;
 
-            // get vertices normals by triangle index
-            CRT_vector3 n0, n1, n2;
-            mesh.get_triangle_vertex_normals(triangle_index, n0, n1, n2);
-
-            // get uvs
-            CRT_vector3 uv0, uv1, uv2;
-            mesh.get_triangle_uvs(triangle_index, uv0, uv1, uv2);
-
-            // gets the closest hit_point to a triangle
-            CRT_hit temp_hit;
-            if (intersect(triangle, ray, temp_hit, n0, n1, n2, uv0, uv1, uv2) && temp_hit.t < closest_t)
+            if (intersect(triangles[i], ray, closest_t, t, w, u))
             {
-                closest_t = temp_hit.t;
-                temp_hit.material_index = mesh.get_material_index();
-                temp_hit.texture_index  = materials[temp_hit.material_index].texture_index;
-                hit_point = temp_hit;
-                hit_anything = true;
+                closest_t = t;
+                best_mesh = &mesh;
+                best_index = i;
+                best_w = w;
+                best_u = u;
             }
         }
     }
-    return hit_anything;
+
+    // if no mesh was hit
+    if (!best_mesh) return false;
+
+    // closest triangle hit
+    const CRT_triangle& triangle = best_mesh->get_precomputed_triangles()[best_index];
+
+    CRT_vector3 n0, n1, n2, uv0, uv1, uv2;
+    best_mesh->get_triangle_vertex_normals(best_index, n0, n1, n2);
+    best_mesh->get_triangle_uvs(best_index, uv0, uv1, uv2);
+
+    // barycentric coordinates
+    const float w = best_w;
+    const float u = best_u;
+    const float v = 1.0f - u - w;
+
+    hit_point.t               = closest_t;
+    hit_point.point           = ray.origin + closest_t * ray.direction;
+    hit_point.barycentric     = CRT_vector3(u, v, w);
+    hit_point.triangle        = triangle;
+    hit_point.shading_normal  = (n0 * w + n1 * u + n2 * v).normalize();
+    hit_point.uv              = uv0 * w + uv1 * u + uv2 * v;
+    hit_point.material_index  = best_mesh->get_material_index();
+    hit_point.texture_index   = materials[hit_point.material_index].texture_index;
+    return true;
 }
 
-bool CRT_render::is_shadow(const CRT_ray& shadow_ray, float max_distance) const
+bool CRT_render::is_shadow(const CRT_ray& shadow_ray, float t_max) const
 {
     for (const CRT_mesh& mesh : objects)
     {
@@ -139,13 +121,15 @@ bool CRT_render::is_shadow(const CRT_ray& shadow_ray, float max_distance) const
 
         // checks if the shadow ray intersects any triangle in the scene
 
-        size_t count = mesh.get_triangle_count();
-        for (size_t i = 0; i < count; i++)
-        {
-            CRT_triangle triangle = mesh.get_precomputed_triangles()[i];
+        // place holders for the intersect function
+        float t, w, u;
 
+        const std::vector<CRT_triangle>& triangles = mesh.get_precomputed_triangles();
+
+        for (const CRT_triangle& triangle : triangles)
+        {
             // checks if the shadow ray intersects this single triangle
-            if (intersect_shadow(triangle, shadow_ray, max_distance))
+            if (intersect(triangle, shadow_ray, t_max, t, w, u))
                 return true; // dont care about the closest hit just any hit
         }
     }

@@ -31,18 +31,14 @@ public:
 // intersection functions
 private:
     // low level triangle intersection
-    bool intersect( const CRT_triangle& T, const CRT_ray& ray, CRT_hit& hit_point,
-                    const CRT_vector3& n0, const CRT_vector3& n1, const CRT_vector3& n2,
-                    const CRT_vector3& uv0, const CRT_vector3& uv1, const CRT_vector3& uv2) const;
-
-    // same as intersect but it just checks if its shadow without the other things
-    // refractive materials just dont leave shadows for now
-    bool intersect_shadow(const CRT_triangle& T, const CRT_ray& ray, float max_distance) const;
-
+    bool intersect(const CRT_triangle& T, const CRT_ray& ray, 
+                   float t_max, float& t_out, float& w_out, float& u_out) const;
+                   
     // closest intersection across the whole scene
     bool intersect_scene(const CRT_ray& ray, CRT_hit& hit_point) const;
-
+    
     // whether a shadow ray hits anything before max_distance
+    // refractive materials just dont leave shadows for now
     bool is_shadow(const CRT_ray& shadow_ray, float max_distance) const;
 
 

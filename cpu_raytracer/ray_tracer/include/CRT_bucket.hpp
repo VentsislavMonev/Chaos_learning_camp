@@ -13,7 +13,7 @@ struct CRT_bucket
     int height() const { return y1 - y0; }
 };
 
-inline constexpr int CRT_DEFAULT_BUCKET_SIZE = 24;
+inline constexpr int CRT_DEFAULT_BUCKET_SIZE = 16;
 
 // splits a width x height image into buckets of at most bucket_size x bucket_size.
 // buckets on the right and bottom edges are clipped to the image bounds.
